@@ -105,13 +105,13 @@ const Results = () => {
                     onContextMenu={(e) => e.preventDefault()}
                     style={{
                         width: '100%',
-                        aspectRatio: '16/9',
+                        position: 'relative',
+                        paddingBottom: '56.25%',
                         marginBottom: '40px',
                         borderRadius: '16px',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
                         overflow: 'hidden',
                         background: '#000',
-                        position: 'relative',
                         cursor: 'pointer'
                     }}>
 
@@ -136,12 +136,12 @@ const Results = () => {
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         style={{
-                            width: '100%',
-                            height: '100%',
                             position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            objectFit: 'cover',
+                            top: '50%',
+                            left: '50%',
+                            transform: 'translate(-50%, -50%)',
+                            width: '101%',
+                            height: '101%',
                             pointerEvents: isAudioEnabled ? 'auto' : 'none'
                         }}
                     ></iframe>
@@ -404,7 +404,7 @@ const Results = () => {
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 };
 
