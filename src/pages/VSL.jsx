@@ -34,10 +34,12 @@ const VSL = () => {
 
     const handleEnableAudio = () => {
         if (videoRef.current) {
-            videoRef.current.currentTime = 0;
-            videoRef.current.muted = false;
-            videoRef.current.loop = false;
-            videoRef.current.play();
+            // Send command to unMute and restart/play
+            const iframe = videoRef.current;
+            iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+            iframe.contentWindow.postMessage('{"event":"command","func":"seekTo","args":[0, true]}', '*');
+            iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+
             setIsAudioEnabled(true);
             setIsPlaying(true);
             setShowControls(false);
@@ -46,27 +48,30 @@ const VSL = () => {
 
     const togglePlay = () => {
         if (videoRef.current) {
+            const iframe = videoRef.current;
             if (isPlaying) {
-                videoRef.current.pause();
+                iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
                 setShowControls(true);
                 if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
             } else {
-                videoRef.current.play();
+                iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
                 setShowControls(false);
             }
             setIsPlaying(!isPlaying);
         }
     };
 
-    const handleTimeUpdate = () => {
-        if (videoRef.current) {
-            const current = videoRef.current.currentTime;
-            const duration = videoRef.current.duration;
-            if (duration) {
-                setProgress((current / duration) * 100);
-            }
+    // Simplified progress simulation for YouTube embed without full API
+    // (Real progress sync requires the bulky YT API library)
+    useEffect(() => {
+        let interval;
+        if (isPlaying && isAudioEnabled) {
+            interval = setInterval(() => {
+                setProgress((prev) => (prev >= 100 ? 0 : prev + 0.1));
+            }, 1000);
         }
-    };
+        return () => clearInterval(interval);
+    }, [isPlaying, isAudioEnabled]);
 
     return (
         <div className="container" style={{ padding: '40px 16px', background: '#FAFAFA' }}>
@@ -105,21 +110,35 @@ const VSL = () => {
                         position: 'relative',
                         cursor: 'pointer'
                     }}>
-                    <video
+                    {/* Interaction Layer for Overlay Clicks */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            zIndex: 5,
+                            display: isAudioEnabled ? 'none' : 'block' // Only block while waiting to unmute
+                        }}
+                    ></div>
+                    <iframe
                         ref={videoRef}
-                        controls={false} // Hide default controls
-                        autoPlay
-                        muted={!isAudioEnabled}
-                        loop={!isAudioEnabled}
-                        playsInline
-                        onTimeUpdate={handleTimeUpdate}
-                        onEnded={() => setIsPlaying(false)}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-
-                    >
-                        <source src="/vsl%20quiz.mp4" type="video/mp4" />
-                        Seu navegador não suporta a reprodução de vídeos.
-                    </video>
+                        src="https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4"
+                        title="VSL Video"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            objectFit: 'cover',
+                            pointerEvents: isAudioEnabled ? 'auto' : 'none' // Block clicks on video until audio enabled
+                        }}
+                    ></iframe>
 
                     {/* Custom Controls (Only visible when audio is enabled and (paused or hovered)) */}
                     {isAudioEnabled && (showControls || !isPlaying) && (
