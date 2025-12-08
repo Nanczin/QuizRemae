@@ -132,16 +132,17 @@ const Results = () => {
                         ref={videoRef}
                         src="https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4"
                         title="VSL Video"
+                        loading="eager"
+                        fetchpriority="high"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         allowFullScreen
                         style={{
                             position: 'absolute',
-                            top: '50%',
-                            left: '50%',
-                            transform: 'translate(-50%, -50%)',
-                            width: '110%',
-                            height: '110%',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
                             pointerEvents: isAudioEnabled ? 'auto' : 'none'
                         }}
                     ></iframe>
