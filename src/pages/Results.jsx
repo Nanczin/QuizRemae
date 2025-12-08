@@ -140,8 +140,8 @@ const Results = () => {
                             top: '50%',
                             left: '50%',
                             transform: 'translate(-50%, -50%)',
-                            width: '101%',
-                            height: '101%',
+                            width: '110%',
+                            height: '110%',
                             pointerEvents: isAudioEnabled ? 'auto' : 'none'
                         }}
                     ></iframe>
