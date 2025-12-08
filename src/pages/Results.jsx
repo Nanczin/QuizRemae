@@ -9,41 +9,66 @@ const Results = () => {
     const [progress, setProgress] = useState(0);
     const [showControls, setShowControls] = useState(false);
 
+    const controlsTimeoutRef = useRef(null);
+
     useEffect(() => {
         bgm.stop();
+        return () => {
+            if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+        };
     }, []);
+
+    const handleInteraction = () => {
+        if (!isAudioEnabled) return;
+
+        setShowControls(true);
+
+        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+
+        if (isPlaying) {
+            controlsTimeoutRef.current = setTimeout(() => {
+                setShowControls(false);
+            }, 3000);
+        }
+    };
 
     const handleEnableAudio = () => {
         if (videoRef.current) {
-            videoRef.current.currentTime = 0;
-            videoRef.current.muted = false;
-            videoRef.current.loop = false;
-            videoRef.current.play();
+            const iframe = videoRef.current;
+            iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
+            iframe.contentWindow.postMessage('{"event":"command","func":"seekTo","args":[0, true]}', '*');
+            iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+
             setIsAudioEnabled(true);
             setIsPlaying(true);
+            setShowControls(false);
         }
     };
 
     const togglePlay = () => {
         if (videoRef.current) {
+            const iframe = videoRef.current;
             if (isPlaying) {
-                videoRef.current.pause();
+                iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                setShowControls(true);
+                if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
             } else {
-                videoRef.current.play();
+                iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                setShowControls(false);
             }
             setIsPlaying(!isPlaying);
         }
     };
 
-    const handleTimeUpdate = () => {
-        if (videoRef.current) {
-            const current = videoRef.current.currentTime;
-            const duration = videoRef.current.duration;
-            if (duration) {
-                setProgress((current / duration) * 100);
-            }
+    useEffect(() => {
+        let interval;
+        if (isPlaying && isAudioEnabled) {
+            interval = setInterval(() => {
+                setProgress((prev) => (prev >= 100 ? 0 : prev + 0.1));
+            }, 1000);
         }
-    };
+        return () => clearInterval(interval);
+    }, [isPlaying, isAudioEnabled]);
 
     const handleCheckout = () => {
         window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
@@ -68,8 +93,6 @@ const Results = () => {
                 {/* Video VSL */}
                 {/* Video VSL */}
                 <div
-                    onMouseEnter={() => setShowControls(true)}
-                    onMouseLeave={() => setShowControls(false)}
                     onClick={() => {
                         if (!isAudioEnabled) {
                             handleEnableAudio();
@@ -77,6 +100,8 @@ const Results = () => {
                             togglePlay();
                         }
                     }}
+                    onMouseMove={handleInteraction}
+                    onMouseLeave={() => isPlaying && setShowControls(false)}
                     onContextMenu={(e) => e.preventDefault()}
                     style={{
                         width: '100%',
@@ -89,21 +114,37 @@ const Results = () => {
                         position: 'relative',
                         cursor: 'pointer'
                     }}>
-                    <video
-                        ref={videoRef}
-                        controls={false}
-                        autoPlay
-                        muted={!isAudioEnabled}
-                        loop={!isAudioEnabled}
-                        playsInline
-                        onTimeUpdate={handleTimeUpdate}
-                        onEnded={() => setIsPlaying(false)}
-                        style={{ width: '100%', height: '100%', objectFit: 'cover' }}
 
-                    >
-                        <source src="/vsl%20quiz.mp4" type="video/mp4" />
-                        Seu navegador não suporta a reprodução de vídeos.
-                    </video>
+                    {/* Interaction Layer for Overlay Clicks */}
+                    <div
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            zIndex: 5,
+                            display: isAudioEnabled ? 'none' : 'block'
+                        }}
+                    ></div>
+
+                    <iframe
+                        ref={videoRef}
+                        src="https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4"
+                        title="VSL Video"
+                        frameBorder="0"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                        style={{
+                            width: '100%',
+                            height: '100%',
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            objectFit: 'cover',
+                            pointerEvents: isAudioEnabled ? 'auto' : 'none'
+                        }}
+                    ></iframe>
 
                     {/* Custom Controls */}
                     {isAudioEnabled && (showControls || !isPlaying) && (
@@ -119,8 +160,9 @@ const Results = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 gap: '16px',
-                                opacity: 1,
-                                transition: 'opacity 0.3s'
+                                opacity: showControls ? 1 : 0,
+                                transition: 'opacity 0.3s',
+                                pointerEvents: showControls ? 'auto' : 'none'
                             }}
                         >
                             <button
