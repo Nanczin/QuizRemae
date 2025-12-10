@@ -211,3 +211,14 @@ button {
     font-size: 2rem;
   }
 }
+
+.card-highlight {
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .card-highlight {
+    transform: none;
+    margin: 16px 0; /* Add some margin to separate since scale is gone */
+  }
+}

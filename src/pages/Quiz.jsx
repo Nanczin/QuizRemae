@@ -209,27 +209,29 @@ const Quiz = () => {
                     left: '0',
                     width: '100%',
                     height: '100%',
-                    background: 'rgba(255,255,255,0.9)',
+                    background: 'rgba(255,255,255,0.95)',
                     zIndex: 50,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    backdropFilter: 'blur(5px)'
+                    backdropFilter: 'blur(8px)',
+                    padding: '20px'
                 }}>
                     <div style={{
                         background: 'white',
-                        padding: '32px',
+                        padding: '24px',
                         borderRadius: '24px',
-                        boxShadow: '0 20px 50px rgba(251, 124, 128, 0.3)',
+                        boxShadow: '0 20px 50px rgba(251, 124, 128, 0.25)',
                         textAlign: 'center',
-                        transform: 'scale(1.1)',
                         border: '2px solid #FEB4B4',
-                        maxWidth: '90%'
+                        maxWidth: '400px',
+                        width: '100%',
+                        animation: 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)'
                     }}>
-                        <Trophy size={64} color="#FB7C80" style={{ marginBottom: '16px' }} />
-                        <h3 style={{ fontSize: '1.5rem', color: '#1F2937', marginBottom: '8px' }}>{showAchievement}</h3>
-                        <p style={{ color: '#6B7280' }}>Continue assim, mãe!</p>
+                        <Trophy size={48} color="#FB7C80" style={{ marginBottom: '16px' }} />
+                        <h3 style={{ fontSize: '1.25rem', color: '#1F2937', marginBottom: '8px', lineHeight: '1.3' }}>{showAchievement}</h3>
+                        <p style={{ color: '#6B7280', fontSize: '0.95rem' }}>Continue assim, mãe!</p>
                     </div>
                 </div>
             )}

@@ -177,44 +177,52 @@ const MemoryGame = () => {
                                                 border: isSolved ? '2px solid #10B981' : '2px solid var(--color-primary)',
                                                 overflow: 'hidden'
                                             }}>
-                                                <img src={card.image} alt={card.content} style={{ width: '100%', height: '60%', objectFit: 'cover' }} />
+                                                <img src={card.image} alt={card.content} style={{ width: '100%', height: '50%', objectFit: 'cover' }} />
 
                                                 <div style={{
-                                                    height: '40%',
+                                                    height: '50%',
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
-                                                    justifyContent: 'center',
+                                                    justifyContent: 'space-evenly',
                                                     padding: '4px',
                                                     width: '100%',
                                                     background: isSolved ? '#ECFDF5' : 'white'
                                                 }}>
                                                     {/* Match Icon Indicator */}
                                                     <div style={{
-                                                        marginBottom: '2px',
                                                         color: isSolved ? '#10B981' : 'var(--color-primary)',
                                                         background: isSolved ? 'rgba(16, 185, 129, 0.1)' : 'rgba(251, 124, 128, 0.1)',
                                                         borderRadius: '50%',
-                                                        padding: '4px'
+                                                        padding: '4px',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center'
                                                     }}>
                                                         {card.matchIcon}
                                                     </div>
 
-                                                    <span style={{ fontSize: 'clamp(0.7rem, 2vw, 0.85rem)', fontWeight: '600', color: 'var(--color-text)', textAlign: 'center', lineHeight: '1.1', marginBottom: '2px' }}>
+                                                    <span style={{
+                                                        fontSize: 'clamp(0.65rem, 3vw, 0.85rem)',
+                                                        fontWeight: '600',
+                                                        color: 'var(--color-text)',
+                                                        textAlign: 'center',
+                                                        lineHeight: '1.2',
+                                                        margin: '2px 0'
+                                                    }}>
                                                         {card.content}
                                                     </span>
 
                                                     {/* Type Label */}
                                                     <span style={{
-                                                        fontSize: '0.65rem',
+                                                        fontSize: '0.6rem',
                                                         textTransform: 'uppercase',
                                                         color: card.type === 'problem' ? '#EF4444' : '#10B981',
                                                         fontWeight: '700',
                                                         letterSpacing: '0.5px',
                                                         background: card.type === 'problem' ? '#FEF2F2' : '#ECFDF5',
                                                         padding: '2px 6px',
-                                                        borderRadius: '4px',
-                                                        marginTop: '2px'
+                                                        borderRadius: '4px'
                                                     }}>
                                                         {card.type === 'problem' ? 'Problema' : 'Solução'}
                                                     </span>
