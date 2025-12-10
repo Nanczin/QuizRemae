@@ -74,6 +74,14 @@ const Results = () => {
         window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
     };
 
+    const scrollToPackages = (e) => {
+        e.preventDefault();
+        const element = document.getElementById('pacotes');
+        if (element) {
+            element.scrollIntoView({ behavior: 'smooth' });
+        }
+    };
+
     return (
         <div className="container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '40px 16px', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)' }}>
             <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
@@ -277,6 +285,21 @@ const Results = () => {
                             Se você se identificou com pelo menos 2 desses pontos, continue lendo... <br />
                             Porque o que você vai descobrir nos próximos 3 minutos pode mudar completamente sua vida nos próximos 30 dias.
                         </p>
+                        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                            <a href="#pacotes" onClick={scrollToPackages} style={{
+                                display: 'inline-block',
+                                background: '#EF4444',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                padding: '12px 24px',
+                                borderRadius: '50px',
+                                textDecoration: 'none',
+                                boxShadow: '0 4px 6px rgba(239, 68, 68, 0.3)',
+                                fontSize: '1rem'
+                            }}>
+                                👉 QUERO MUDAR MINHA VIDA AGORA →
+                            </a>
+                        </div>
                     </div>
 
                     {/* A Verdade Que Ninguém Te Conta */}
@@ -348,6 +371,21 @@ const Results = () => {
                             Você só vai viver <strong>ESSE</strong> momento <strong>UMA VEZ</strong>. <br /><br />
                             Você quer passar ele se sentindo mal? Ou quer aproveitar essa fase sendo a melhor versão de você?
                         </p>
+                        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                            <a href="#pacotes" onClick={scrollToPackages} style={{
+                                display: 'inline-block',
+                                background: '#EF4444',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                padding: '12px 24px',
+                                borderRadius: '50px',
+                                textDecoration: 'none',
+                                boxShadow: '0 4px 6px rgba(239, 68, 68, 0.3)',
+                                fontSize: '1rem'
+                            }}>
+                                👉 SIM, QUERO SER A MELHOR VERSÃO DE MIM →
+                            </a>
+                        </div>
                     </div>
 
                     {/* IMAGINE Acordar Daqui 30 Dias */}
@@ -373,6 +411,21 @@ const Results = () => {
                             Isso não é fantasia. <br />
                             É o que acontece quando você segue o método certo.
                         </p>
+                        <div style={{ textAlign: 'center', marginTop: '24px' }}>
+                            <a href="#pacotes" onClick={scrollToPackages} style={{
+                                display: 'inline-block',
+                                background: '#10B981',
+                                color: 'white',
+                                fontWeight: 'bold',
+                                padding: '12px 24px',
+                                borderRadius: '50px',
+                                textDecoration: 'none',
+                                boxShadow: '0 4px 6px rgba(16, 185, 129, 0.3)',
+                                fontSize: '1rem'
+                            }}>
+                                👉 QUERO MINHA TRANSFORMAÇÃO AGORA →
+                            </a>
+                        </div>
                     </div>
 
                     {/* Apresento: TRANSFORMAÇÃO PÓS-PARTO */}
@@ -392,7 +445,7 @@ const Results = () => {
                 </div>
 
                 {/* 6. OFERTA E PACOTES */}
-                <h2 className="text-center" style={{ marginBottom: '32px', color: '#1F2937', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '800' }}>📦 ESCOLHA SEU PACOTE</h2>
+                <h2 id="pacotes" className="text-center" style={{ marginBottom: '32px', color: '#1F2937', fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: '800', scrollMarginTop: '20px' }}>📦 ESCOLHA SEU PACOTE</h2>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '24px', marginBottom: '40px' }}>
 
@@ -575,11 +628,11 @@ const Results = () => {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px', margin: '0 auto' }}>
                         <button onClick={handleCheckout} className="btn" style={{ width: '100%', padding: '20px', fontSize: '1.1rem', background: '#9CA3AF' }}>
                             👇 PACOTE ESSENCIAL — R$ 10,00 <br />
-                            <span style={{ fontSize: '0.9rem' }}>[QUERO COMEÇAR AGORA]</span>
+                            <span style={{ fontSize: '0.9rem' }}>[QUERO COMEÇAR MINHA TRANSFORMAÇÃO AGORA →]</span>
                         </button>
                         <button onClick={handleCheckout} className="btn pulse-animation" style={{ width: '100%', padding: '20px', fontSize: '1.1rem', background: '#FB7C80', boxShadow: '0 4px 14px rgba(251, 124, 128, 0.4)' }}>
                             👇 PACOTE COMPLETO — R$ 27,00 🔥 MAIS ESCOLHIDO <br />
-                            <span style={{ fontSize: '0.9rem' }}>[QUERO A TRANSFORMAÇÃO COMPLETA]</span>
+                            <span style={{ fontSize: '0.9rem' }}>[QUERO A TRANSFORMAÇÃO COMPLETA + GRUPO VIP →]</span>
                         </button>
                     </div>
                 </div>
