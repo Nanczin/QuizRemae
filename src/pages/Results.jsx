@@ -83,7 +83,15 @@ const Results = () => {
     };
 
     return (
-        <div className="container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '40px 16px', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)' }}>
+        <div className="container" style={{
+            minHeight: '100vh', /* Fallback */
+            minHeight: '100dvh',
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '40px 16px',
+            paddingBottom: 'calc(40px + env(safe-area-inset-bottom))',
+            background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)'
+        }}>
             <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
 
                 {/* Título Principal */}
@@ -137,12 +145,12 @@ const Results = () => {
 
                     <iframe
                         ref={videoRef}
-                        src="https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4"
+                        src="https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4&playsinline=1"
                         title="VSL Video"
                         loading="eager"
                         fetchpriority="high"
                         frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                         allowFullScreen
                         style={{
                             position: 'absolute',
@@ -429,12 +437,14 @@ const Results = () => {
                     </div>
 
                     {/* Apresento: TRANSFORMAÇÃO PÓS-PARTO */}
-                    <div style={{ marginBottom: '40px', textAlign: 'center', border: '2px dashed #FB7C80', padding: '32px', borderRadius: '16px' }}>
-                        <h2 style={{ fontSize: '1.8rem', color: '#FB7C80', marginBottom: '16px', fontWeight: '900' }}>🎯 Apresento: TRANSFORMAÇÃO PÓS-PARTO</h2>
-                        <h3 style={{ fontSize: '1.2rem', color: '#1F2937', marginBottom: '24px' }}>
+                    <div style={{ marginBottom: '40px', textAlign: 'center', border: '2px dashed #FB7C80', padding: 'clamp(16px, 4vw, 32px)', borderRadius: '16px', width: '100%', boxSizing: 'border-box' }}>
+                        <h2 style={{ fontSize: 'clamp(1.25rem, 5vw, 1.8rem)', color: '#FB7C80', marginBottom: '16px', fontWeight: '900', lineHeight: '1.3', wordBreak: 'break-word', hyphens: 'auto' }}>
+                            🎯 Apresento: TRANSFORMAÇÃO PÓS-PARTO
+                        </h2>
+                        <h3 style={{ fontSize: 'clamp(1rem, 4vw, 1.2rem)', color: '#1F2937', marginBottom: '24px', lineHeight: '1.5' }}>
                             O Único Método Completo, Simples e Acessível Para Mães Que Querem Recuperar o Corpo (e a Vida) em 30 Dias
                         </h3>
-                        <p style={{ fontSize: '1.1rem', color: '#4B5563' }}>
+                        <p style={{ fontSize: 'clamp(0.95rem, 3.5vw, 1.1rem)', color: '#4B5563', lineHeight: '1.6' }}>
                             Sem dietas restritivas. <br />
                             Sem exercícios impossíveis. <br />
                             Sem gastar uma fortuna. <br /><br />

@@ -6,7 +6,7 @@ const Home = () => {
   const navigate = useNavigate();
 
   return (
-    <div className="container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '40px 16px', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)' }}>
+    <div className="container" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)' }}>
       <div className="card card-futuristic" style={{ maxWidth: '600px', margin: '0 auto', padding: '40px 24px', border: 'none', textAlign: 'center' }}>
 
         <div style={{ marginBottom: '32px' }}>

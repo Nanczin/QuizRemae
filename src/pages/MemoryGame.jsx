@@ -89,7 +89,16 @@ const MemoryGame = () => {
     };
 
     return (
-        <div className="container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '20px 16px', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)' }}>
+        <div className="container" style={{
+            minHeight: '100vh', /* Fallback */
+            minHeight: '100dvh',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            padding: '16px',
+            paddingBottom: 'calc(90px + env(safe-area-inset-bottom))',
+            background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)'
+        }}>
             <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
 
                 {/* Title: Only shown when game is NOT finished */}
@@ -248,6 +257,23 @@ const MemoryGame = () => {
                     </div>
                 )}
             </div>
+
+            <style>{`
+               .memory-grid {
+                 display: grid;
+                 grid-template-columns: repeat(3, 1fr);
+                 gap: 16px;
+               }
+               @media (max-width: 480px) {
+                 .memory-grid {
+                   gap: 8px;
+                 }
+                 /* Make cards slightly more compact on very small screens */
+                 .memory-grid > div {
+                    aspect-ratio: 0.7 !important; /* Taller/Narrower to fit content */
+                 }
+               }
+             `}</style>
         </div>
     );
 };

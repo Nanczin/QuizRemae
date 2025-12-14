@@ -39,12 +39,13 @@ const DiagnosisLoading = () => {
     if (showResult) {
         return (
             <div className="container" style={{
-                minHeight: '100vh',
+                minHeight: '100dvh',
                 display: 'flex',
                 flexDirection: 'column',
                 justifyContent: 'center',
                 alignItems: 'center',
                 padding: '20px',
+                paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
                 background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)'
             }}>
                 <div className="card card-futuristic animate-fade-in" style={{
@@ -97,12 +98,13 @@ const DiagnosisLoading = () => {
 
     return (
         <div className="container" style={{
-            minHeight: '100vh',
+            minHeight: '100dvh',
             display: 'flex',
             flexDirection: 'column',
             justifyContent: 'center',
             alignItems: 'center',
             padding: '20px',
+            paddingBottom: 'calc(20px + env(safe-area-inset-bottom))',
             background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)'
         }}>
             <div className="card card-futuristic" style={{

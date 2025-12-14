@@ -199,7 +199,7 @@ const Quiz = () => {
     const question = questions[currentQuestion];
 
     return (
-        <div className="container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', padding: '20px 16px', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)', position: 'relative', overflow: 'hidden' }}>
+        <div className="container" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', padding: '16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)', position: 'relative' }}>
 
             {/* Achievement Overlay */}
             {showAchievement && (
@@ -285,7 +285,7 @@ const Quiz = () => {
                 {/* Question Card */}
                 <div className={`card card-futuristic ${isAnimating ? 'animate-fade-out' : 'animate-fade-in'}`} style={{ border: 'none', padding: '32px 24px', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
 
-                    <h2 style={{ marginBottom: '32px', fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', background: 'linear-gradient(90deg, #1F2937 0%, #4B5563 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', textAlign: 'center', lineHeight: '1.3' }}>
+                    <h2 style={{ marginBottom: '32px', fontSize: 'clamp(1.5rem, 5vw, 2rem)', background: 'linear-gradient(90deg, #1F2937 0%, #4B5563 100%)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', display: 'inline-block', textAlign: 'center', lineHeight: '1.3' }}>
                         {question.question}
                     </h2>
 
@@ -302,7 +302,7 @@ const Quiz = () => {
                                     border: '1px solid #F3F4F6',
                                     justifyContent: 'space-between',
                                     padding: '20px 24px',
-                                    fontSize: '1rem',
+                                    fontSize: '1.1rem',
                                     textAlign: 'left',
                                     boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
                                     borderRadius: '16px',
@@ -310,10 +310,11 @@ const Quiz = () => {
                                     overflow: 'hidden',
                                     width: '100%',
                                     display: 'flex',
-                                    alignItems: 'center'
+                                    alignItems: 'center',
+                                    minHeight: '72px'
                                 }}
                             >
-                                <span style={{ position: 'relative', zIndex: 1, flex: 1 }}>{option}</span>
+                                <span style={{ position: 'relative', zIndex: 1, flex: 1, lineHeight: '1.4' }}>{option}</span>
                                 <ChevronRight size={20} color="var(--color-primary)" style={{ opacity: 0.6, flexShrink: 0, marginLeft: '8px' }} />
                             </button>
                         ))}
@@ -322,35 +323,60 @@ const Quiz = () => {
             </div>
 
             <style>{`
-        @keyframes shimmer {
-          0% { transform: translateX(-100%); }
-          100% { transform: translateX(100%); }
-        }
-        
-        /* Mobile Optimizations */
-        @media (max-width: 640px) {
-          .card-futuristic {
-            padding: 24px 16px !important;
-          }
-          .quiz-option {
-            padding: 16px 20px !important;
-            font-size: 0.95rem !important;
-          }
-          .container {
-            padding: 16px 12px !important;
-          }
-        }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    
+    .container {
+        /* Fallback for browsers that don't support dvh */
+        min-height: 100vh;
+        min-height: 100dvh;
+        /* Mobile-friendly padding clearing the audio button */
+        padding-bottom: calc(90px + env(safe-area-inset-bottom)) !important; 
+    }
 
-        /* Tablet Optimizations */
-        @media (min-width: 641px) and (max-width: 1024px) {
-          .container {
-            padding: 32px !important;
-          }
-          .card-futuristic {
-            padding: 40px !important;
-          }
-        }
-      `}</style>
+    /* Mobile Optimizations */
+    @media (max-width: 640px) {
+      .card-futuristic {
+        padding: 24px 20px !important;
+        margin-bottom: 0px;
+        background: rgba(255, 255, 255, 0.85);
+      }
+      
+      .quiz-option {
+        padding: 16px 20px !important;
+        font-size: 1rem !important;
+        min-height: 64px !important;
+      }
+
+      .container {
+        padding: 16px !important;
+        padding-bottom: calc(100px + env(safe-area-inset-bottom)) !important;
+      }
+
+      h2 {
+        font-size: 1.35rem !important;
+        margin-bottom: 24px !important;
+      }
+
+      img[alt="Método RE-MÃE"] {
+        height: 60px !important;
+        margin-bottom: 16px !important;
+      }
+    }
+
+    /* Tablet Optimizations */
+    @media (min-width: 641px) and (max-width: 1024px) {
+      .container {
+        padding: 32px !important;
+        padding-bottom: 40px !important;
+      }
+      .card-futuristic {
+        padding: 40px !important;
+      }
+    }
+  `}</style>
         </div>
     );
 };

@@ -10,7 +10,7 @@ const Checkout = () => {
     const title = isComplete ? 'Pacote Completo' : 'Pacote Essencial';
 
     return (
-        <div className="container" style={{ minHeight: '100vh', padding: '40px 16px', background: '#F9FAFB' }}>
+        <div className="container" style={{ minHeight: '100dvh', padding: '40px 16px', paddingBottom: 'calc(40px + env(safe-area-inset-bottom))', background: '#F9FAFB' }}>
             <div style={{ maxWidth: '900px', margin: '0 auto', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px' }}>
 
                 {/* Order Summary */}
