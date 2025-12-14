@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Check, Star, ShieldCheck, Play, Pause, VolumeX } from 'lucide-react';
 import { bgm } from '../utils/sounds';
 
@@ -70,8 +71,10 @@ const Results = () => {
         return () => clearInterval(interval);
     }, [isPlaying, isAudioEnabled]);
 
-    const handleCheckout = () => {
-        window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
+    const navigate = useNavigate();
+
+    const handleCheckout = (plan) => {
+        navigate(`/checkout?plan=${plan}`);
     };
 
     const scrollToPackages = (e) => {
@@ -140,6 +143,7 @@ const Results = () => {
                             width: '100%',
                             height: '100%',
                             zIndex: 5,
+                            display: isAudioEnabled ? 'none' : 'block'
                         }}
                     ></div>
 
@@ -159,7 +163,7 @@ const Results = () => {
                             width: '100%',
                             height: '100%',
                             transform: 'scale(1.01)',
-                            pointerEvents: 'none'
+                            pointerEvents: isAudioEnabled ? 'auto' : 'none'
                         }}
                     ></iframe>
 
@@ -489,7 +493,7 @@ const Results = () => {
                             👉 Investimento único de R$ 10,00 <br />(menos que um açaí)
                         </div>
 
-                        <button onClick={handleCheckout} className="btn btn-large" style={{ width: '100%', background: '#9CA3AF', fontSize: '1rem', padding: '16px' }}>
+                        <button onClick={() => handleCheckout('essential')} className="btn btn-large" style={{ width: '100%', background: '#9CA3AF', fontSize: '1rem', padding: '16px' }}>
                             QUERO COMEÇAR MINHA TRANSFORMAÇÃO AGORA →
                         </button>
                     </div>
@@ -557,7 +561,7 @@ const Results = () => {
                             👉 Investimento único de R$ 27,00 <br />(o preço de UMA ida ao salão)
                         </div>
 
-                        <button onClick={handleCheckout} className="btn btn-large" style={{ width: '100%', fontSize: '1rem', padding: '16px' }}>
+                        <button onClick={() => handleCheckout('complete')} className="btn btn-large" style={{ width: '100%', fontSize: '1rem', padding: '16px' }}>
                             QUERO A TRANSFORMAÇÃO COMPLETA + GRUPO VIP →
                         </button>
                     </div>
@@ -636,11 +640,11 @@ const Results = () => {
                 <div style={{ marginBottom: '60px', textAlign: 'center' }}>
                     <p style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '16px', color: '#1F2937' }}>🚀 CLIQUE NO BOTÃO ABAIXO E GARANTA SUA VAGA</p>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', maxWidth: '500px', margin: '0 auto' }}>
-                        <button onClick={handleCheckout} className="btn" style={{ width: '100%', padding: '20px', fontSize: '1.1rem', background: '#9CA3AF' }}>
+                        <button onClick={() => handleCheckout('essential')} className="btn" style={{ width: '100%', padding: '20px', fontSize: '1.1rem', background: '#9CA3AF' }}>
                             👇 PACOTE ESSENCIAL — R$ 10,00 <br />
                             <span style={{ fontSize: '0.9rem' }}>[QUERO COMEÇAR MINHA TRANSFORMAÇÃO AGORA →]</span>
                         </button>
-                        <button onClick={handleCheckout} className="btn pulse-animation" style={{ width: '100%', padding: '20px', fontSize: '1.1rem', background: '#FB7C80', boxShadow: '0 4px 14px rgba(251, 124, 128, 0.4)' }}>
+                        <button onClick={() => handleCheckout('complete')} className="btn pulse-animation" style={{ width: '100%', padding: '20px', fontSize: '1.1rem', background: '#FB7C80', boxShadow: '0 4px 14px rgba(251, 124, 128, 0.4)' }}>
                             👇 PACOTE COMPLETO — R$ 27,00 🔥 MAIS ESCOLHIDO <br />
                             <span style={{ fontSize: '0.9rem' }}>[QUERO A TRANSFORMAÇÃO COMPLETA + GRUPO VIP →]</span>
                         </button>

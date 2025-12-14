@@ -110,26 +110,25 @@ const MemoryGame = () => {
 
                 {!showSuccess ? (
                     <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))',
-                        gap: '12px',
-                        justifyContent: 'center',
                         maxWidth: '600px',
-                        margin: '0 auto'
+                        margin: '0 auto',
+                        width: '100%'
                     }}>
                         <style>{`
-               .memory-grid {
-                 display: grid;
-                 grid-template-columns: repeat(3, 1fr);
-                 gap: 16px;
-               }
-               @media (max-width: 480px) {
-                 .memory-grid {
-                   gap: 8px;
-                 }
-               }
-             `}</style>
-                        <div className="memory-grid" style={{ width: '100%' }}>
+                            .memory-grid {
+                                display: grid;
+                                grid-template-columns: repeat(3, 1fr);
+                                gap: 24px;
+                                width: 100%;
+                            }
+                            @media (max-width: 640px) {
+                                .memory-grid {
+                                    grid-template-columns: repeat(2, 1fr); /* Switch to 2 columns on mobile */
+                                    gap: 16px;
+                                }
+                            }
+                        `}</style>
+                        <div className="memory-grid">
                             {cards.map((card) => {
                                 const isFlipped = flipped.includes(card.id) || solved.includes(card.id);
                                 const isSolved = solved.includes(card.id);
@@ -159,14 +158,14 @@ const MemoryGame = () => {
                                                 height: '100%',
                                                 backfaceVisibility: 'hidden',
                                                 background: 'var(--gradient-primary)',
-                                                borderRadius: '12px',
+                                                borderRadius: '16px',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                                boxShadow: '0 8px 16px rgba(251, 124, 128, 0.2)',
                                                 border: '2px solid white'
                                             }}>
-                                                <span style={{ fontSize: '2rem', color: 'white' }}>?</span>
+                                                <span style={{ fontSize: '2.5rem', color: 'white', fontWeight: '700' }}>?</span>
                                             </div>
 
                                             {/* Back (Content) */}
@@ -177,61 +176,63 @@ const MemoryGame = () => {
                                                 backfaceVisibility: 'hidden',
                                                 transform: 'rotateY(180deg)',
                                                 background: isSolved ? '#ECFDF5' : 'white',
-                                                borderRadius: '12px',
+                                                borderRadius: '16px',
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 alignItems: 'center',
-                                                justifyContent: 'center',
-                                                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                                                justifyContent: 'space-between',
+                                                boxShadow: '0 8px 16px rgba(0,0,0,0.1)',
                                                 border: isSolved ? '2px solid #10B981' : '2px solid var(--color-primary)',
                                                 overflow: 'hidden'
                                             }}>
-                                                <img src={card.image} alt={card.content} style={{ width: '100%', height: '50%', objectFit: 'cover' }} />
+                                                <img src={card.image} alt={card.content} style={{ width: '100%', height: '55%', objectFit: 'cover' }} />
 
                                                 <div style={{
-                                                    height: '50%',
+                                                    flex: 1,
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
-                                                    justifyContent: 'space-evenly',
-                                                    padding: '4px',
+                                                    justifyContent: 'center',
+                                                    padding: '8px 4px',
                                                     width: '100%',
-                                                    background: isSolved ? '#ECFDF5' : 'white'
+                                                    background: isSolved ? '#ECFDF5' : 'white',
+                                                    gap: '4px'
                                                 }}>
                                                     {/* Match Icon Indicator */}
                                                     <div style={{
                                                         color: isSolved ? '#10B981' : 'var(--color-primary)',
                                                         background: isSolved ? 'rgba(16, 185, 129, 0.1)' : 'rgba(251, 124, 128, 0.1)',
                                                         borderRadius: '50%',
-                                                        padding: '4px',
+                                                        padding: '6px',
                                                         display: 'flex',
                                                         alignItems: 'center',
-                                                        justifyContent: 'center'
+                                                        justifyContent: 'center',
+                                                        marginBottom: '2px'
                                                     }}>
-                                                        {card.matchIcon}
+                                                        {React.cloneElement(card.matchIcon, { size: 16 })}
                                                     </div>
 
                                                     <span style={{
-                                                        fontSize: 'clamp(0.65rem, 3vw, 0.85rem)',
-                                                        fontWeight: '600',
+                                                        fontSize: 'clamp(0.85rem, 4vw, 1rem)',
+                                                        fontWeight: '700',
                                                         color: 'var(--color-text)',
                                                         textAlign: 'center',
                                                         lineHeight: '1.2',
-                                                        margin: '2px 0'
                                                     }}>
                                                         {card.content}
                                                     </span>
 
                                                     {/* Type Label */}
                                                     <span style={{
-                                                        fontSize: '0.6rem',
+                                                        fontSize: '0.7rem',
                                                         textTransform: 'uppercase',
                                                         color: card.type === 'problem' ? '#EF4444' : '#10B981',
-                                                        fontWeight: '700',
+                                                        fontWeight: '800',
                                                         letterSpacing: '0.5px',
-                                                        background: card.type === 'problem' ? '#FEF2F2' : '#ECFDF5',
-                                                        padding: '2px 6px',
-                                                        borderRadius: '4px'
+                                                        background: card.type === 'problem' ? '#FEF2F2' : '#DCFCE7',
+                                                        padding: '3px 8px',
+                                                        borderRadius: '12px',
+                                                        marginTop: '2px'
                                                     }}>
                                                         {card.type === 'problem' ? 'Problema' : 'Solução'}
                                                     </span>
@@ -258,22 +259,7 @@ const MemoryGame = () => {
                 )}
             </div>
 
-            <style>{`
-               .memory-grid {
-                 display: grid;
-                 grid-template-columns: repeat(3, 1fr);
-                 gap: 16px;
-               }
-               @media (max-width: 480px) {
-                 .memory-grid {
-                   gap: 8px;
-                 }
-                 /* Make cards slightly more compact on very small screens */
-                 .memory-grid > div {
-                    aspect-ratio: 0.7 !important; /* Taller/Narrower to fit content */
-                 }
-               }
-             `}</style>
+            {/* Styles already included above */}
         </div>
     );
 };
