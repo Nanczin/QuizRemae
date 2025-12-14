@@ -74,7 +74,7 @@ const Results = () => {
     const navigate = useNavigate();
 
     const handleCheckout = (plan) => {
-        navigate(`/checkout?plan=${plan}`);
+        window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
     };
 
     const scrollToPackages = (e) => {
@@ -149,7 +149,7 @@ const Results = () => {
 
                     <iframe
                         ref={videoRef}
-                        src="https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4&playsinline=1"
+                        src={`https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4&playsinline=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                         title="VSL Video"
                         loading="eager"
                         fetchpriority="high"
@@ -163,7 +163,7 @@ const Results = () => {
                             width: '100%',
                             height: '100%',
                             transform: 'scale(1.01)',
-                            pointerEvents: isAudioEnabled ? 'auto' : 'none'
+                            pointerEvents: 'none'
                         }}
                     ></iframe>
 

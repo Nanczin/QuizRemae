@@ -36,9 +36,9 @@ const VSL = () => {
         if (videoRef.current) {
             // Send command to unMute and restart/play
             const iframe = videoRef.current;
-            iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
-            iframe.contentWindow.postMessage('{"event":"command","func":"seekTo","args":[0, true]}', '*');
-            iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'unMute', args: [] }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'seekTo', args: [0, true] }), '*');
+            iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
 
             setIsAudioEnabled(true);
             setIsPlaying(true);
@@ -50,11 +50,11 @@ const VSL = () => {
         if (videoRef.current) {
             const iframe = videoRef.current;
             if (isPlaying) {
-                iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'pauseVideo', args: [] }), '*');
                 setShowControls(true);
                 if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
             } else {
-                iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                iframe.contentWindow.postMessage(JSON.stringify({ event: 'command', func: 'playVideo', args: [] }), '*');
                 setShowControls(false);
             }
             setIsPlaying(!isPlaying);
@@ -124,7 +124,7 @@ const VSL = () => {
                     ></div>
                     <iframe
                         ref={videoRef}
-                        src="https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4&playsinline=1"
+                        src={`https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4&playsinline=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
                         title="VSL Video"
                         frameBorder="0"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -136,7 +136,7 @@ const VSL = () => {
                             top: 0,
                             left: 0,
                             objectFit: 'cover',
-                            pointerEvents: isAudioEnabled ? 'auto' : 'none' // Block clicks on video until audio enabled
+                            pointerEvents: 'none'
                         }}
                     ></iframe>
 
@@ -291,11 +291,11 @@ const VSL = () => {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '32px', alignItems: 'start' }}>
 
                         {/* Essential Package */}
-                        <div className="card" style={{ border: '1px solid #E5E7EB', padding: '32px', position: 'relative' }}>
+                        <div className="card" style={{ border: '1px solid #E5E7EB', padding: 'clamp(20px, 4vw, 32px)', position: 'relative' }}>
                             <h3 className="text-center" style={{ marginBottom: '16px', fontSize: '1.25rem', color: '#4B5563' }}>🔥 PACOTE ESSENCIAL</h3>
                             <div className="text-center" style={{ marginBottom: '24px' }}>
                                 <span style={{ fontSize: '1.5rem', color: '#9CA3AF', textDecoration: 'line-through', marginRight: '8px' }}>R$ 47,00</span>
-                                <span style={{ fontSize: '3rem', fontWeight: '700', color: '#1F2937' }}>R$ 10</span>
+                                <span style={{ fontSize: 'clamp(2.5rem, 5vw, 3rem)', fontWeight: '700', color: '#1F2937' }}>R$ 10</span>
                             </div>
 
                             <ul style={{ listStyle: 'none', marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -304,16 +304,15 @@ const VSL = () => {
                                 <li style={{ display: 'flex', gap: '10px' }}><CheckCircle size={20} color="var(--color-primary)" /> Acesso vitalício</li>
                             </ul>
 
-                            <button onClick={() => navigate('/checkout?plan=essential')} className="btn btn-large" style={{ width: '100%', background: '#9CA3AF', boxShadow: 'none' }}>
+                            <button onClick={() => window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd'} className="btn btn-large" style={{ width: '100%', background: '#9CA3AF', boxShadow: 'none' }}>
                                 Quero o Essencial
                             </button>
                         </div>
 
                         {/* Complete Package */}
-                        <div className="card" style={{
+                        <div className="card card-highlight" style={{
                             border: '2px solid var(--color-primary)',
-                            padding: '32px',
-                            transform: 'scale(1.05)',
+                            padding: 'clamp(20px, 4vw, 32px)',
                             boxShadow: '0 20px 40px rgba(251, 124, 128, 0.15)',
                             position: 'relative',
                             zIndex: 10
@@ -341,7 +340,7 @@ const VSL = () => {
                             <h3 className="text-center" style={{ marginBottom: '16px', marginTop: '16px', fontSize: '1.5rem', color: 'var(--color-primary)' }}>🌟 PACOTE COMPLETO</h3>
                             <div className="text-center" style={{ marginBottom: '24px' }}>
                                 <span style={{ fontSize: '1.5rem', color: '#9CA3AF', textDecoration: 'line-through', marginRight: '8px' }}>R$ 97,00</span>
-                                <span style={{ fontSize: '3.5rem', fontWeight: '800', color: 'var(--color-primary)' }}>R$ 27</span>
+                                <span style={{ fontSize: 'clamp(3rem, 6vw, 3.5rem)', fontWeight: '800', color: 'var(--color-primary)' }}>R$ 27</span>
                             </div>
 
                             <ul style={{ listStyle: 'none', marginBottom: '32px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
@@ -354,7 +353,7 @@ const VSL = () => {
                                 <li style={{ display: 'flex', gap: '10px' }}><CheckCircle size={20} color="var(--color-primary)" /> Acesso vitalício</li>
                             </ul>
 
-                            <button onClick={() => navigate('/checkout?plan=complete')} className="btn btn-large" style={{ width: '100%', fontSize: '1.2rem', padding: '20px' }}>
+                            <button onClick={() => window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd'} className="btn btn-large" style={{ width: '100%', fontSize: '1.2rem', padding: '20px' }}>
                                 Quero o Completo
                             </button>
                         </div>
