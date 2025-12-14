@@ -163,7 +163,7 @@ const Results = () => {
                             width: '100%',
                             height: '100%',
                             transform: 'scale(1.01)',
-                            pointerEvents: 'none'
+                            pointerEvents: isAudioEnabled ? 'auto' : 'none'
                         }}
                     ></iframe>
 
@@ -468,11 +468,11 @@ const Results = () => {
                         <h3 style={{ fontSize: '1.5rem', color: '#374151', marginBottom: '8px', fontWeight: '700' }}>💎 PACOTE ESSENCIAL</h3>
                         <div style={{ marginBottom: '16px' }}>
                             <span style={{ textDecoration: 'line-through', color: '#9CA3AF', fontSize: '1.2rem' }}>R$ 47,00</span>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                                 <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#1F2937', marginTop: '6px' }}>R$</span>
-                                <span style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1F2937', lineHeight: '1' }}>10,00</span>
+                                <span style={{ fontSize: '2.5rem', fontWeight: '800', color: '#1F2937', lineHeight: '1', marginLeft: '4px' }}>10,00</span>
                             </div>
-                            <div style={{ color: '#10B981', fontWeight: '700', fontSize: '0.9rem', marginTop: '4px', marginLeft: '6px' }}>(79% OFF)</div>
+                            <div style={{ color: '#10B981', fontWeight: '700', fontSize: '0.9rem', marginTop: '4px' }}>(79% OFF)</div>
                         </div>
 
                         <p style={{ fontSize: '1rem', color: '#6B7280', marginBottom: '24px', fontStyle: 'italic' }}>Ideal pra você que quer dar o primeiro passo com segurança</p>
@@ -523,11 +523,11 @@ const Results = () => {
                         <h3 style={{ fontSize: '1.5rem', color: '#FB7C80', marginBottom: '8px', fontWeight: '800' }}>PACOTE COMPLETO</h3>
                         <div style={{ marginBottom: '16px' }}>
                             <span style={{ textDecoration: 'line-through', color: '#9CA3AF', fontSize: '1.2rem' }}>R$ 97,00</span>
-                            <div style={{ display: 'flex', alignItems: 'flex-start', marginLeft: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
                                 <span style={{ fontSize: '1.2rem', fontWeight: '800', color: '#FB7C80', marginTop: '6px' }}>R$</span>
-                                <span style={{ fontSize: '3rem', fontWeight: '800', color: '#FB7C80', lineHeight: '1' }}>27,00</span>
+                                <span style={{ fontSize: '3rem', fontWeight: '800', color: '#FB7C80', lineHeight: '1', marginLeft: '4px' }}>27,00</span>
                             </div>
-                            <div style={{ color: '#EF4444', fontWeight: '700', fontSize: '0.9rem', marginTop: '4px', marginLeft: '6px' }}>(72% OFF)</div>
+                            <div style={{ color: '#EF4444', fontWeight: '700', fontSize: '0.9rem', marginTop: '4px' }}>(72% OFF)</div>
                         </div>
 
                         <p style={{ fontSize: '1rem', color: '#6B7280', marginBottom: '24px', fontStyle: 'italic' }}>A transformação COMPLETA — corpo, mente e rotina</p>
