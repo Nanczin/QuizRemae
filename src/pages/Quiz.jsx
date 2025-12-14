@@ -129,32 +129,19 @@ const Quiz = () => {
     const [answers, setAnswers] = useState({});
     const [isAnimating, setIsAnimating] = useState(false);
     const [showAchievement, setShowAchievement] = useState(null);
+    const [showExitModal, setShowExitModal] = useState(false);
     const navigate = useNavigate();
 
-    // Back Redirect Logic
+    // Back Redirect Logic with Exit Modal
     useEffect(() => {
         // Push a new entry to history to allow intercepting the back button
         window.history.pushState(null, "", window.location.href);
 
         const handlePopState = () => {
-            // Redirect to a specific URL when back button is pressed
-            // In a real scenario, this might be a 'downsell' or the same quiz restarted
-            // For now, let's redirect to a safe fallback or stay on page if desired.
-            // Usually, back redirect sends user to the VSL or offer page.
-            window.location.href = 'https://www.google.com'; // Placeholder or specific URL requested? 
-            // Common practice: Redirect to the VSL/Results page to try and recover the user
-            // window.location.href = '/vsl'; // But they haven't finished quiz.
-            // Let's assume Google or a generic "don't leave" page for now as requested "back redirect".
-            // Actually, usually it goes to the advertorial.
-            // I will use a dummy URL or the main page for now, but Google is common for these "exit" tests.
-            // Let's use a "Wait" alert or just redirect.
-            // "back redirect" usually means "redirect to offer".
-            // I'll set it to the VSL page for now? Or keep it simple.
-            // The user didn't specify WHERE. I will use google.com as a placeholder or ask?
-            // "redirect caso o usuario tente sair" -> imply blocking exit.
-            // I'll stick to redirecting to the index or VSL.
-            // A common aggressive internet marketing tactic is redirecting to the VSL page directly.
-            navigate('/vsl');
+            // Prevent the user from leaving effectively by pushing state again
+            window.history.pushState(null, "", window.location.href);
+            // Show the retention modal
+            setShowExitModal(true);
         };
 
         window.addEventListener('popstate', handlePopState);
@@ -162,7 +149,7 @@ const Quiz = () => {
         return () => {
             window.removeEventListener('popstate', handlePopState);
         };
-    }, [navigate]);
+    }, []);
 
     const handleAnswer = (answer) => {
         if (isAnimating) return;
@@ -234,6 +221,74 @@ const Quiz = () => {
     return (
         <div style={{ minHeight: '100dvh', width: '100%', background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)' }}>
             <div className="container" style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', padding: '16px', paddingBottom: 'calc(16px + env(safe-area-inset-bottom))', position: 'relative' }}>
+
+                {/* Exit Intent Modal */}
+                {showExitModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'rgba(0,0,0,0.6)',
+                        zIndex: 100,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        <div className="animate-pop-in" style={{
+                            background: 'white',
+                            padding: '32px 24px',
+                            borderRadius: '20px',
+                            maxWidth: '380px',
+                            width: '100%',
+                            textAlign: 'center',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+                            position: 'relative'
+                        }}>
+                            <div style={{ fontSize: '3rem', marginBottom: '16px' }}>✋</div>
+                            <h3 style={{ fontSize: '1.5rem', color: '#EF4444', fontWeight: '800', marginBottom: '16px', lineHeight: '1.2' }}>
+                                Espere! Não saia ainda…
+                            </h3>
+                            <p style={{ fontSize: '1.05rem', color: '#4B5563', lineHeight: '1.6', marginBottom: '8px' }}>
+                                Hoje você pode acessar esse método com um <strong>valor promocional especial</strong>, liberado apenas agora.
+                            </p>
+                            <p style={{ fontSize: '1.05rem', color: '#4B5563', lineHeight: '1.6', marginBottom: '24px' }}>
+                                É a chance de transformar seu corpo e sua autoestima pagando menos do que o valor normal.
+                            </p>
+
+                            <button
+                                onClick={() => navigate('/vsl')}
+                                className="btn pulse-animation"
+                                style={{
+                                    width: '100%',
+                                    background: '#10B981',
+                                    padding: '16px',
+                                    fontSize: '1.1rem',
+                                    boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4)'
+                                }}
+                            >
+                                Quero garantir essa condição
+                            </button>
+
+                            <button
+                                onClick={() => setShowExitModal(false)}
+                                style={{
+                                    background: 'none',
+                                    border: 'none',
+                                    color: '#9CA3AF',
+                                    marginTop: '16px',
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                }}>
+                                Não, quero perder essa chance
+                            </button>
+                        </div>
+                    </div>
+                )}
 
                 {/* Achievement Overlay */}
                 {showAchievement && (
