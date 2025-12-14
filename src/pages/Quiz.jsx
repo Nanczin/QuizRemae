@@ -260,7 +260,7 @@ const Quiz = () => {
                             </p>
 
                             <button
-                                onClick={() => navigate('/vsl')}
+                                onClick={() => navigate('/results')}
                                 className="btn pulse-animation"
                                 style={{
                                     width: '100%',
