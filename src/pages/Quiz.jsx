@@ -131,6 +131,39 @@ const Quiz = () => {
     const [showAchievement, setShowAchievement] = useState(null);
     const navigate = useNavigate();
 
+    // Back Redirect Logic
+    useEffect(() => {
+        // Push a new entry to history to allow intercepting the back button
+        window.history.pushState(null, "", window.location.href);
+
+        const handlePopState = () => {
+            // Redirect to a specific URL when back button is pressed
+            // In a real scenario, this might be a 'downsell' or the same quiz restarted
+            // For now, let's redirect to a safe fallback or stay on page if desired.
+            // Usually, back redirect sends user to the VSL or offer page.
+            window.location.href = 'https://www.google.com'; // Placeholder or specific URL requested? 
+            // Common practice: Redirect to the VSL/Results page to try and recover the user
+            // window.location.href = '/vsl'; // But they haven't finished quiz.
+            // Let's assume Google or a generic "don't leave" page for now as requested "back redirect".
+            // Actually, usually it goes to the advertorial.
+            // I will use a dummy URL or the main page for now, but Google is common for these "exit" tests.
+            // Let's use a "Wait" alert or just redirect.
+            // "back redirect" usually means "redirect to offer".
+            // I'll set it to the VSL page for now? Or keep it simple.
+            // The user didn't specify WHERE. I will use google.com as a placeholder or ask?
+            // "redirect caso o usuario tente sair" -> imply blocking exit.
+            // I'll stick to redirecting to the index or VSL.
+            // A common aggressive internet marketing tactic is redirecting to the VSL page directly.
+            navigate('/vsl');
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
+    }, [navigate]);
+
     const handleAnswer = (answer) => {
         if (isAnimating) return;
 
