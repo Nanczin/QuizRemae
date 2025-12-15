@@ -14,10 +14,12 @@ const VSL_CONFIG = {
 };
 
 // ==========================================
-// COMPONENT: YOUTUBE PLAYER NATIVE (CONTROLS=1, NO BORDERS)
+// COMPONENT: YOUTUBE PLAYER (CUSTOM OVERLAY + NO BORDERS + PAUSE Toggle)
 // ==========================================
 const VSLPlayer = ({ onProgress }) => {
     const playerRef = useRef(null);
+    const [needsInteraction, setNeedsInteraction] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(true);
 
     // Inicialização da API do YouTube
     useEffect(() => {
@@ -50,18 +52,18 @@ const VSLPlayer = ({ onProgress }) => {
                 height: '100%',
                 playerVars: {
                     autoplay: 1,
-                    mute: 1, // Autoplay mobile requer mudo
-                    controls: 1, // REQUERIDO: Botão de Pause Nativo (e barra)
+                    mute: 1,          // Mute para garantir autoplay
+                    controls: 0,      // ESCONDE NATIVOS (Sem barra, titulo, logo)
                     rel: 0,
                     modestbranding: 1,
                     playsinline: 1,
                     fs: 0,
-                    disablekb: 0, // Permite teclado se desktop
+                    disablekb: 1,
                     origin: window.location.origin
                 },
                 events: {
-                    'onReady': onPlayerReady
-                    // onStateChange removido pois não precisamos mais monitorar play/pause manualmente
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
                 }
             });
         } catch (e) {
@@ -70,12 +72,42 @@ const VSLPlayer = ({ onProgress }) => {
     };
 
     const onPlayerReady = (event) => {
-        // Tenta autoplay mudo
         event.target.mute();
         event.target.playVideo();
     };
 
-    // Loop de Progresso (APENAS para lógica de oferta)
+    const onPlayerStateChange = (event) => {
+        if (event.data === window.YT.PlayerState.PLAYING) {
+            setIsPlaying(true);
+        } else if (event.data === window.YT.PlayerState.PAUSED) {
+            setIsPlaying(false);
+        }
+    };
+
+    // --- INTERAÇÕES ---
+
+    const handleUnlockAudio = () => {
+        if (playerRef.current && playerRef.current.unMute) {
+            playerRef.current.unMute();
+            playerRef.current.seekTo(0); // RECOMEÇA O VÍDEO
+            playerRef.current.playVideo();
+            setNeedsInteraction(false);
+        }
+    };
+
+    const togglePlay = (e) => {
+        if (e) e.stopPropagation();
+        if (!playerRef.current || !playerRef.current.getPlayerState) return;
+
+        const playerState = playerRef.current.getPlayerState();
+        if (playerState === window.YT.PlayerState.PLAYING) {
+            playerRef.current.pauseVideo();
+        } else {
+            playerRef.current.playVideo();
+        }
+    };
+
+    // Loop de Progresso
     useEffect(() => {
         const interval = setInterval(() => {
             if (playerRef.current && playerRef.current.getCurrentTime) {
@@ -108,10 +140,91 @@ const VSLPlayer = ({ onProgress }) => {
                     transform: 'translate(-50%, -50%) scale(1.1)',
                     width: '100%',
                     height: '100%',
-                    transformOrigin: 'center center'
+                    transformOrigin: 'center center',
+                    pointerEvents: 'none' // Click handling via overlays
                 }}
             />
-            {/* SEM OVERLAYS CUSTOMIZADOS - CONTROLES NATIVOS ATIVADOS */}
+
+            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) */}
+            {needsInteraction && (
+                <div
+                    onClick={handleUnlockAudio}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 20,
+                        background: 'transparent',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer'
+                    }}
+                >
+                    {/* BARRINHA DE AVISO */}
+                    <div style={{
+                        position: 'absolute', top: '10px',
+                        background: 'rgba(0,0,0,0.7)', color: 'white',
+                        padding: '8px 16px', borderRadius: '20px',
+                        fontSize: '0.9rem', fontWeight: '600',
+                        display: 'flex', alignItems: 'center', gap: '8px'
+                    }}>
+                        <VolumeX size={16} /> O vídeo já começou...
+                    </div>
+
+                    <div className="pulse-animation" style={{
+                        background: '#EF4444',
+                        color: 'white',
+                        padding: '16px 24px',
+                        borderRadius: '12px',
+                        display: 'flex', alignItems: 'center', gap: '12px',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
+                    }}>
+                        <VolumeX size={32} color="white" />
+                        <span style={{ fontWeight: '800', textTransform: 'uppercase' }}>TOQUE PARA OUVIR</span>
+                    </div>
+                </div>
+            )}
+
+            {/* 2. AREA INVISÍVEL PARA TOGGLE PLAY/PAUSE (PÓS-INTERAÇÃO) */}
+            {!needsInteraction && (
+                <div
+                    onClick={togglePlay}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 10,
+                        cursor: 'pointer'
+                    }}
+                />
+            )}
+
+            {/* 3. ÍCONE DE PLAY GIGANTE (SE PAUSADO) */}
+            {!needsInteraction && !isPlaying && (
+                <div style={{
+                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                    zIndex: 15, pointerEvents: 'none'
+                }}>
+                    <div style={{
+                        background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '24px',
+                        backdropFilter: 'blur(2px)', border: '2px solid rgba(255,255,255,0.8)'
+                    }}>
+                        <Play size={48} fill="white" color="white" />
+                    </div>
+                </div>
+            )}
+
+            {/* 4. ÍCONE DE PAUSE DISCRETO (SE RODANDO) */}
+            {!needsInteraction && isPlaying && (
+                <div style={{
+                    position: 'absolute', bottom: '20px', left: '20px',
+                    zIndex: 15, pointerEvents: 'none', opacity: 0.8
+                }}>
+                    <div style={{
+                        background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '12px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                        <Pause size={24} fill="white" color="white" />
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 };
