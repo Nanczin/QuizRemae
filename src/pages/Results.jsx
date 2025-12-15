@@ -68,13 +68,22 @@ const Results = () => {
     const onPlayerReady = (event) => {
         setDuration(event.target.getDuration());
 
-        // Auto-play logic from redirect
-        if (location.state?.autoPlay) {
-            // Try to play unmuted, but fallback to muted if browser blocks
-            event.target.mute(); // Start muted to ensure play
-            event.target.playVideo();
-            // We don't set isAudioEnabled=true here, waiting for user click to unmute
-        }
+        // Force play (muted) ensures autoplay works on most mobile browsers/Instagram
+        event.target.mute();
+        event.target.playVideo();
+
+        // Fallback: Ensure it starts if the initial attempt failed
+        const checkPlay = setInterval(() => {
+            if (playerRef.current && playerRef.current.getPlayerState() !== 1) { // 1 = Playing
+                playerRef.current.mute();
+                playerRef.current.playVideo();
+            } else {
+                clearInterval(checkPlay);
+            }
+        }, 1000);
+
+        // Auto-cleanup interval after 5s to avoid infinite loops
+        setTimeout(() => clearInterval(checkPlay), 5000);
     };
 
     const onPlayerStateChange = (event) => {
@@ -202,7 +211,7 @@ const Results = () => {
                     style={{
                         width: '100%',
                         position: 'relative',
-                        paddingBottom: '56.25%',
+                        paddingBottom: '70%', // Increased height for better mobile presence
                         marginBottom: '40px',
                         borderRadius: '16px',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
