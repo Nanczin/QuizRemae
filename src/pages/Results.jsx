@@ -7,7 +7,8 @@ import { bgm } from '../utils/sounds';
 // CONFIGURAÇÕES DA VSL
 // ==========================================
 const VSL_CONFIG = {
-    videoUrl: "/vsl-quiz.mp4",
+    // Adicionamos timestamp para evitar cache de versões corrompidas/HTML
+    videoUrl: "/vsl-quiz.mp4?t=" + new Date().getTime(),
     offerDelaySeconds: 0,
     primaryColor: '#FB7C80'
 };
@@ -42,12 +43,31 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
         video.setAttribute('x5-video-player-type', 'h5-page');
         video.setAttribute('x5-video-player-fullscreen', 'true');
 
+        // Check de REDE para diagnóstico (Verifica se está retornando HTML em vez de VIDEO)
+        fetch(VSL_CONFIG.videoUrl, { method: 'HEAD' })
+            .then(res => {
+                const type = res.headers.get('content-type');
+                const size = res.headers.get('content-length');
+                log(`HEAD Check: Type=${type} | Size=${(size / 1024 / 1024).toFixed(2)}MB`);
+
+                if (type && type.includes('text/html')) {
+                    log('CRITICAL: Server returning HTML checking URL! Fix routing.');
+                }
+            })
+            .catch(err => log('HEAD Check Failed: ' + err.message));
+
         // Debug Events
-        const events = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'pause', 'error', 'stalled', 'suspend'];
+        const events = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'pause', 'error', 'stalled', 'suspend', 'waiting'];
         events.forEach(evt => {
             video.addEventListener(evt, () => {
-                // log(`Evt: ${evt} | Ready: ${video.readyState}`);
-                if (evt === 'error') log(`Error: ${video.error ? video.error.message || video.error.code : 'unknown'}`);
+                if (evt === 'error') {
+                    const err = video.error;
+                    log(`ERROR EVENT: Code=${err.code} | Msg=${err.message}`);
+                    // Tenta detalhar erros de rede
+                } else if (evt !== 'timeupdate') {
+                    // log(`Event: ${evt}`); 
+                }
+
                 if (evt === 'playing') setIsPlaying(true);
                 if (evt === 'pause') setIsPlaying(false);
             });
