@@ -10,12 +10,13 @@ const Results = () => {
     const [progress, setProgress] = useState(0);
     const [showControls, setShowControls] = useState(false);
     const [duration, setDuration] = useState(0);
+    const [videoError, setVideoError] = useState(false);
 
     const controlsTimeoutRef = useRef(null);
 
     const playerRef = useRef(null);
     // Encoder URL para evitar erros com espaços
-    const VIDEO_URL = "/vsl%20quiz.mp4";
+    const VIDEO_URL = "/vsl quiz.mp4";
 
     // Initialize HTML5 Video Logic
     useEffect(() => {
@@ -165,28 +166,57 @@ const Results = () => {
 
                     {/* YouTube Iframe - Blocked Interaction */}
                     {/* Native HTML5 Video Player */}
-                    <video
-                        ref={playerRef}
-                        src={VIDEO_URL}
-                        className="vsl-video"
-                        playsInline
-                        webkit-playsinline="true"
-                        disablePictureInPicture
-                        loop
-                        muted // Start muted for autoplay policy
-                        autoPlay // Attempt autoplay
-                        onTimeUpdate={handleTimeUpdate}
-                        onEnded={() => setIsPlaying(false)}
-                        style={{
+                    {/* Native HTML5 Video Player */}
+                    {!videoError ? (
+                        <video
+                            ref={playerRef}
+                            src={VIDEO_URL}
+                            className="vsl-video"
+                            playsInline
+                            webkit-playsinline="true"
+                            disablePictureInPicture
+                            loop
+                            muted // Start muted for autoplay policy
+                            autoPlay // Attempt autoplay
+                            onTimeUpdate={handleTimeUpdate}
+                            onEnded={() => setIsPlaying(false)}
+                            onError={(e) => {
+                                console.error("Video load error:", e);
+                                setVideoError(true);
+                            }}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                            }}
+                        />
+                    ) : (
+                        <div style={{
                             position: 'absolute',
                             top: 0,
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            objectFit: 'cover', // Ensures full screen fill
-                            // No pointer events on video itself to prevent native menu
-                        }}
-                    />
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'white',
+                            flexDirection: 'column',
+                            gap: '10px'
+                        }}>
+                            <p>Erro ao carregar vídeo.</p>
+                            <button onClick={() => window.location.reload()} style={{
+                                padding: '8px 16px',
+                                background: '#FB7C80',
+                                border: 'none',
+                                borderRadius: '8px',
+                                color: 'white'
+                            }}>Recarregar</button>
+                        </div>
+                    )}
 
                     {/* Interaction Layer - Master Controller */}
                     <div
