@@ -112,36 +112,35 @@ const Results = () => {
     };
 
     const handleEnableAudio = () => {
-        if (playerRef.current && playerRef.current.unMute) {
-            playerRef.current.unMute();
-            playerRef.current.setVolume(100);
-            playerRef.current.seekTo(0);
-            playerRef.current.playVideo();
+        if (playerRef.current) {
+            // Force volume max and unmute
+            if (playerRef.current.setVolume) playerRef.current.setVolume(100);
+            if (playerRef.current.unMute) playerRef.current.unMute();
+            if (playerRef.current.playVideo) playerRef.current.playVideo();
 
             setIsAudioEnabled(true);
+            setIsPlaying(true);
             setShowControls(false);
         }
     };
 
     const togglePlay = () => {
-        if (playerRef.current && playerRef.current.getPlayerState) {
-            const state = playerRef.current.getPlayerState();
+        if (!playerRef.current) return;
 
-            // Always ensure audio is on
-            if (playerRef.current.isMuted()) {
-                playerRef.current.unMute();
-            }
+        // Force Unmute if seemingly muted
+        if (playerRef.current.isMuted && playerRef.current.isMuted()) {
+            playerRef.current.unMute();
+        }
 
-            // 1 = Playing, 2 = Paused, 0 = Ended, 3 = Buffering, 5 = Cued
-            if (state === 1) {
-                playerRef.current.pauseVideo();
-                setIsPlaying(false);
-                setShowControls(true);
-            } else {
-                playerRef.current.playVideo();
-                setIsPlaying(true);
-                setShowControls(false);
-            }
+        // Toggle logic based on current UI state for instant feedback
+        if (isPlaying) {
+            if (playerRef.current.pauseVideo) playerRef.current.pauseVideo();
+            setIsPlaying(false);
+            setShowControls(true);
+        } else {
+            if (playerRef.current.playVideo) playerRef.current.playVideo();
+            setIsPlaying(true);
+            setShowControls(false);
         }
     };
 
@@ -242,10 +241,11 @@ const Results = () => {
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            zIndex: 20, // Higher than video, lower than controls/overlay
+                            zIndex: 20,
                             cursor: 'pointer',
-                            // On mobile, tap to toggle controls/play
-                            touchAction: 'manipulation'
+                            touchAction: 'manipulation',
+                            // Ensure it's tappable but transparent
+                            background: 'transparent'
                         }}
                     ></div>
 
