@@ -49,7 +49,7 @@ const Results = () => {
             videoId: 'xeTISviozS4',
             playerVars: {
                 autoplay: 1,
-                controls: 1, // Enable native controls for "Free Mode"
+                controls: 0, // Restore custom controls
                 modestbranding: 1,
                 rel: 0,
                 showinfo: 0,
@@ -242,18 +242,70 @@ const Results = () => {
 
 
 
-                    {/* Native Player Container */}
+                    {/* YouTube Iframe - Blocked Interaction */}
                     <div id="vsl-player" style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        // Scale slightly to hide small black edges if needed, but keep controls usable
-                        transform: 'scale(1.02)',
-                        // Allow interaction ONLY after audio is enabled
-                        pointerEvents: isAudioEnabled ? 'auto' : 'none'
+                        transform: 'scale(1.35)', // Zoom to hide YT branding/corners
+                        pointerEvents: 'none' // Block direct Youtube access
                     }}></div>
+
+                    {/* Interaction Layer - Master Controller */}
+                    <div
+                        onClick={() => {
+                            if (!isAudioEnabled) {
+                                handleEnableAudio();
+                            } else {
+                                togglePlay();
+                            }
+                        }}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            cursor: 'pointer',
+                            zIndex: 20,
+                            touchAction: 'manipulation',
+                            background: 'transparent'
+                        }}
+                    ></div>
+
+                    {/* Custom Controls - ONLY Pause/Play Button */}
+                    {isAudioEnabled && (
+                        <div
+                            style={{
+                                position: 'absolute',
+                                bottom: '10px',
+                                left: '10px',
+                                pointerEvents: 'none', // Clicks pass through to the Interaction Layer
+                                zIndex: 30,
+                                opacity: showControls || !isPlaying ? 1 : 0,
+                                transition: 'opacity 0.3s'
+                            }}
+                        >
+                            <button
+                                style={{
+                                    background: 'rgba(0,0,0,0.6)',
+                                    border: 'none',
+                                    borderRadius: '50%',
+                                    width: '48px',
+                                    height: '48px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: 'white',
+                                    backdropFilter: 'blur(4px)'
+                                }}
+                            >
+                                {isPlaying ? <Pause size={24} fill="white" /> : <Play size={24} fill="white" />}
+                            </button>
+                        </div>
+                    )}
 
                     {/* Overlay */}
                     {!isAudioEnabled && (
