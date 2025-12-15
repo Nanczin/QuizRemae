@@ -14,7 +14,7 @@ const VSL_CONFIG = {
 };
 
 // ==========================================
-// COMPONENT: VSL PLAYER (ROBUST INTERACTION)
+// COMPONENT: VSL PLAYER (ROBUST INTERACTION FIX)
 // ==========================================
 const VSLPlayer = ({ onProgress, onEnded }) => {
     const videoRef = useRef(null);
@@ -34,7 +34,7 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
         video.setAttribute('webkit-playsinline', 'true');
         video.setAttribute('x5-video-player-type', 'h5-page');
 
-        // Tentativa de Autoplay
+        // Tentativa de Autoplay Silencioso
         video.play()
             .then(() => setIsPlaying(true))
             .catch(() => setIsPlaying(false));
@@ -42,44 +42,40 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
     }, []);
 
     // 2. Interação / Desbloqueio
-    const handleUnlockAudio = async (e) => {
-        // Não usar stopPropagation aqui para garantir que o browser entenda como gesto de usuário
+    const handleUnlockAudio = (e) => {
+        // Forçar execução imediata
+        if (e && e.preventDefault) e.preventDefault();
+
         const video = videoRef.current;
         if (!video) return;
 
-        try {
-            video.muted = false;
-            video.currentTime = 0;
-            const playPromise = video.play();
-            if (playPromise !== undefined) {
-                playPromise
-                    .then(() => {
-                        setNeedsInteraction(false);
-                        setIsPlaying(true);
-                    })
-                    .catch(err => {
-                        console.error("Unlock Play Error:", err);
-                        // Tenta fallback: load + play
-                        video.load();
-                        video.play().then(() => {
-                            setNeedsInteraction(false);
-                            setIsPlaying(true);
-                        });
-                    });
-            }
-        } catch (err) {
-            console.error("Unlock Sync Error:", err);
+        // Sequência de desbloqueio
+        video.muted = false;
+        video.currentTime = 0;
+
+        const playPromise = video.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                setNeedsInteraction(false);
+                setIsPlaying(true);
+            }).catch(error => {
+                console.error("Auto-play prevented (user interaction fix):", error);
+                // Fallback forçado
+                video.muted = false;
+                video.play();
+            });
         }
     };
 
-    // 3. Toggle Play Robust
+    // 3. Toggle Play
     const togglePlay = (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
+
         const video = videoRef.current;
         if (!video) return;
 
-        if (video.paused) {
-            video.play().catch(e => console.error("Play error:", e));
+        if (video.paused || video.ended) {
+            video.play();
             setIsPlaying(true);
         } else {
             video.pause();
@@ -97,8 +93,7 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
     return (
         <div
             className="vsl-container"
-            style={{ position: 'relative', paddingBottom: '56.25%', background: '#000', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}
-            onClick={(e) => needsInteraction ? handleUnlockAudio(e) : togglePlay(e)}
+            style={{ position: 'relative', paddingBottom: '56.25%', background: '#000', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.3)', cursor: 'pointer' }}
         >
             <video
                 ref={videoRef}
@@ -118,16 +113,21 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                 }}
                 onPlay={() => setIsPlaying(true)}
                 onPause={() => setIsPlaying(false)}
+                onClick={!needsInteraction ? togglePlay : undefined}
             />
 
-            {/* OVERLAY DE DESBLOQUEIO (TAP TO UNMUTE) */}
+            {/* OVERLAY DE DESBLOQUEIO (CLICÁVEL DIRETO) */}
             {needsInteraction && (
-                <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    zIndex: 20, background: 'rgba(0,0,0,0.3)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    cursor: 'pointer'
-                }}>
+                <div
+                    onClick={handleUnlockAudio}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 50, // Z-index bem alto
+                        background: 'rgba(0,0,0,0.4)',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer'
+                    }}
+                >
                     <div className="pulse-animation" style={{
                         background: '#EF4444',
                         color: 'white',
@@ -138,7 +138,7 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                         gap: '12px',
                         boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)',
                         border: '2px solid rgba(255,255,255,0.3)',
-                        pointerEvents: 'none'
+                        pointerEvents: 'none' // Clicks passam pro pai (o overlay div acima)
                     }}>
                         <VolumeX size={32} color="white" />
                         <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -150,18 +150,22 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                 </div>
             )}
 
-            {/* BOTÃO GIGANTE DE PLAY (QUANDO PAUSADO E SEM DELAY) */}
+            {/* BOTÃO GIGANTE DE PLAY (QUANDO PAUSADO) */}
             {!needsInteraction && !isPlaying && (
-                <div style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    zIndex: 20,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.2)',
-                    pointerEvents: 'none' // Click pass-through to container
-                }}>
+                <div
+                    onClick={togglePlay}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 40,
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: 'rgba(0,0,0,0.2)',
+                        cursor: 'pointer'
+                    }}
+                >
                     <div style={{
                         background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '24px',
-                        backdropFilter: 'blur(4px)', border: '2px solid rgba(255,255,255,0.5)'
+                        backdropFilter: 'blur(4px)', border: '2px solid rgba(255,255,255,0.5)',
+                        pointerEvents: 'none'
                     }}>
                         <Play size={48} fill="white" color="white" />
                     </div>
@@ -175,14 +179,13 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                     padding: '20px',
                     background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
                     display: 'flex', alignItems: 'center', gap: '15px',
-                    zIndex: 30, // Acima de tudo
+                    zIndex: 45,
                     opacity: isPlaying ? 0 : 1, // Esconde ao tocar
                     transition: 'opacity 0.3s',
-                    pointerEvents: 'none' // Container transparente a cliques (exceto botão)
                 }}>
                     {/* Botão Pequeno */}
                     <button
-                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', pointerEvents: 'auto', padding: '8px' }}
+                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px' }}
                         onClick={togglePlay}
                     >
                         {!isPlaying ? <Play size={24} fill="white" /> : <Pause size={24} fill="white" />}
