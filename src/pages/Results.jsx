@@ -129,7 +129,19 @@ const Results = () => {
         if (!player || !player.getPlayerState) return;
 
         const state = player.getPlayerState();
+        const isMuted = player.isMuted ? player.isMuted() : false;
 
+        // If it's playing but muted (Instagram Autoplay state), Unmute instead of Pause
+        if (state === 1 && isMuted) {
+            player.unMute();
+            player.setVolume(100);
+            setIsAudioEnabled(true);
+            setIsPlaying(true);
+            setShowControls(false);
+            return;
+        }
+
+        // Standard Toggle Logic
         // 1 = Playing
         if (state === 1) {
             player.pauseVideo();
