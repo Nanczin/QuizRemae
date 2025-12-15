@@ -4,11 +4,12 @@ import { Check, Star, ShieldCheck, Play, Pause, VolumeX } from 'lucide-react';
 import { bgm } from '../utils/sounds';
 
 const Results = () => {
-    const videoRef = useRef(null);
+
     const [isAudioEnabled, setIsAudioEnabled] = useState(false);
     const [isPlaying, setIsPlaying] = useState(false);
     const [progress, setProgress] = useState(0);
     const [showControls, setShowControls] = useState(false);
+    const [duration, setDuration] = useState(0);
 
     const controlsTimeoutRef = useRef(null);
 
@@ -82,20 +83,7 @@ const Results = () => {
         }
     };
 
-    useEffect(() => {
-        let interval;
-        if (isPlaying) {
-            interval = setInterval(() => {
-                if (playerRef.current && playerRef.current.getCurrentTime) {
-                    const current = playerRef.current.getCurrentTime();
-                    const total = duration || playerRef.current.getDuration() || 1;
-                    const param = (current / total) * 100;
-                    setProgress(param);
-                }
-            }, 500); // Check every 500ms
-        }
-        return () => clearInterval(interval);
-    }, [isPlaying, duration]);
+
 
     const navigate = useNavigate();
     const location = useLocation();
