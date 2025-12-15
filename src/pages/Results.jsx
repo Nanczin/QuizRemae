@@ -7,16 +7,14 @@ import { bgm } from '../utils/sounds';
 // CONFIGURAÇÕES DA VSL
 // ==========================================
 const VSL_CONFIG = {
-    // Voltando para o seu vídeo.
-    // IMPORTANTE: Se não tocar, o problema é o ARQUIVO (muito pesado ou codec errado).
-    // Recomendo comprimir para < 30MB ou hospedar no Panda/Vimeo/S3.
-    videoUrl: "/vsl-quiz.mp4",
+    // Adicionamos timestamp de novo para garantir que o arquivo NOVO (comprimido) seja baixado e não venha do cache
+    videoUrl: "/vsl-quiz.mp4?t=" + new Date().getTime(),
     offerDelaySeconds: 0,
     primaryColor: '#FB7C80'
 };
 
 // ==========================================
-// COMPONENT: VSL PLAYER (FINAL ROBUST VERSION)
+// COMPONENT: VSL PLAYER (ROBUST INTERACTION)
 // ==========================================
 const VSLPlayer = ({ onProgress, onEnded }) => {
     const videoRef = useRef(null);
@@ -36,49 +34,52 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
         video.setAttribute('webkit-playsinline', 'true');
         video.setAttribute('x5-video-player-type', 'h5-page');
 
-        // Debug silencioso no console apenas
-        video.addEventListener('error', (e) => {
-            console.error("Video Error:", video.error);
-        });
-
         // Tentativa de Autoplay
-        video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
+        video.play()
+            .then(() => setIsPlaying(true))
+            .catch(() => setIsPlaying(false));
+
     }, []);
 
     // 2. Interação / Desbloqueio
     const handleUnlockAudio = async (e) => {
-        if (e && e.stopPropagation) e.stopPropagation();
-
+        // Não usar stopPropagation aqui para garantir que o browser entenda como gesto de usuário
         const video = videoRef.current;
         if (!video) return;
 
         try {
             video.muted = false;
             video.currentTime = 0;
-            await video.play();
-            setNeedsInteraction(false);
-            setIsPlaying(true);
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise
+                    .then(() => {
+                        setNeedsInteraction(false);
+                        setIsPlaying(true);
+                    })
+                    .catch(err => {
+                        console.error("Unlock Play Error:", err);
+                        // Tenta fallback: load + play
+                        video.load();
+                        video.play().then(() => {
+                            setNeedsInteraction(false);
+                            setIsPlaying(true);
+                        });
+                    });
+            }
         } catch (err) {
-            console.log('Unlock failed, trying fallback...');
-            video.load(); // Fallback pesado
-            video.muted = false;
-            video.play()
-                .then(() => {
-                    setNeedsInteraction(false);
-                    setIsPlaying(true);
-                })
-                .catch(e => console.error("Final Play Error:", e));
+            console.error("Unlock Sync Error:", err);
         }
     };
 
-    // 3. Toggle Play
+    // 3. Toggle Play Robust
     const togglePlay = (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
         const video = videoRef.current;
         if (!video) return;
 
         if (video.paused) {
-            video.play();
+            video.play().catch(e => console.error("Play error:", e));
             setIsPlaying(true);
         } else {
             video.pause();
@@ -119,12 +120,13 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                 onPause={() => setIsPlaying(false)}
             />
 
-            {/* OVERLAY DE DESBLOQUEIO */}
+            {/* OVERLAY DE DESBLOQUEIO (TAP TO UNMUTE) */}
             {needsInteraction && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                     zIndex: 20, background: 'rgba(0,0,0,0.3)',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    cursor: 'pointer'
                 }}>
                     <div className="pulse-animation" style={{
                         background: '#EF4444',
@@ -135,7 +137,6 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                         alignItems: 'center',
                         gap: '12px',
                         boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)',
-                        backdropFilter: 'blur(4px)',
                         border: '2px solid rgba(255,255,255,0.3)',
                         pointerEvents: 'none'
                     }}>
@@ -144,29 +145,50 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                             <span style={{ color: 'white', fontWeight: '800', fontSize: '1.1rem', textTransform: 'uppercase' }}>
                                 TOQUE PARA OUVIR
                             </span>
-                            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem' }}>
-                                O vídeo já começou
-                            </span>
                         </div>
                     </div>
                 </div>
             )}
 
-            {/* CONTROLES SIMPLIFICADOS */}
+            {/* BOTÃO GIGANTE DE PLAY (QUANDO PAUSADO E SEM DELAY) */}
+            {!needsInteraction && !isPlaying && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 20,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.2)',
+                    pointerEvents: 'none' // Click pass-through to container
+                }}>
+                    <div style={{
+                        background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '24px',
+                        backdropFilter: 'blur(4px)', border: '2px solid rgba(255,255,255,0.5)'
+                    }}>
+                        <Play size={48} fill="white" color="white" />
+                    </div>
+                </div>
+            )}
+
+            {/* BARRA DE PROGRESSO E CONTROLES */}
             {!needsInteraction && (
                 <div style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0,
                     padding: '20px',
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
                     display: 'flex', alignItems: 'center', gap: '15px',
-                    opacity: isPlaying ? 0 : 1, // Esconde quando toca, mostra quando pausa
+                    zIndex: 30, // Acima de tudo
+                    opacity: isPlaying ? 0 : 1, // Esconde ao tocar
                     transition: 'opacity 0.3s',
-                    pointerEvents: 'none'
+                    pointerEvents: 'none' // Container transparente a cliques (exceto botão)
                 }}>
-                    <button style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', pointerEvents: 'auto' }} onClick={togglePlay}>
-                        {!isPlaying ? <Play size={28} fill="white" /> : <Pause size={28} fill="white" />}
+                    {/* Botão Pequeno */}
+                    <button
+                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', pointerEvents: 'auto', padding: '8px' }}
+                        onClick={togglePlay}
+                    >
+                        {!isPlaying ? <Play size={24} fill="white" /> : <Pause size={24} fill="white" />}
                     </button>
-                    {/* Barra de Progresso Simples */}
+
+                    {/* Barra de Progresso */}
                     <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
                         <div style={{
                             width: `${(videoRef.current?.currentTime / (videoRef.current?.duration || 1)) * 100}%`,
