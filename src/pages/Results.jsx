@@ -15,8 +15,8 @@ const Results = () => {
     const controlsTimeoutRef = useRef(null);
 
     const playerRef = useRef(null);
-    // Adiciona timestamp para evitar cache de versão corrompida/antiga
-    const VIDEO_URL = `/vsl-quiz.mp4?t=${new Date().getTime()}`;
+    // URL estática para garantir estabilidade do player
+    const VIDEO_URL = "/vsl-quiz.mp4";
 
     // Initialize HTML5 Video Logic
     useEffect(() => {
