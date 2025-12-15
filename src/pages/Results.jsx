@@ -77,34 +77,59 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
     };
 
     // Primeira Interação (Unmute & Reset)
-    const handleInitialInteraction = (e) => {
-        if (e) {
-            e.preventDefault();
+    const handleInitialInteraction = async (e) => {
+        // NÃO usar preventDefault() pois alguns browsers móveis bloqueiam a ação de mídia
+        if (e && e.stopPropagation) {
             e.stopPropagation();
         }
 
         const video = videoRef.current;
         if (!video) return;
 
-        video.muted = false;
-        video.volume = 1.0;
-        video.currentTime = 0; // Reinicia para o usuário ouvir do início com som
+        try {
+            // 1. Habilitar som
+            video.muted = false;
+            video.volume = 1.0;
 
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise
-                .then(() => {
-                    setIsPlaying(true);
-                    setIsMuted(false);
-                    setHasInteracted(true);
-                    showControlsBriefly();
-                })
-                .catch(err => console.error("Erro ao dar play com som:", err));
+            // 2. Reiniciar vídeo para experiência completa
+            video.currentTime = 0;
+
+            // 3. Tentar Play direto
+            await video.play();
+
+            // 4. Se sucesso, atualizar estados
+            setIsPlaying(true);
+            setIsMuted(false);
+            setHasInteracted(true);
+            showControlsBriefly();
+
+        } catch (err) {
+            console.error("Erro ao dar play (tentativa 1):", err);
+
+            // Fallback: Tentar carregar novamente e tocar (necessário em alguns WebViews)
+            try {
+                // Pequeno delay para garantir que a UI respondeu
+                await new Promise(resolve => setTimeout(resolve, 50));
+
+                video.load();
+                video.currentTime = 0;
+                await video.play();
+
+                setIsPlaying(true);
+                setIsMuted(false);
+                setHasInteracted(true);
+            } catch (err2) {
+                console.error("Erro fatal no play:", err2);
+                // Se tudo falhar, mostramos um alerta discreto ou apenas deixamos o estado como estava
+                // Opcional: setHasInteracted(true) para liberar os controles manuais
+                setHasInteracted(true);
+                setIsPlaying(false);
+            }
         }
     };
 
     // Controle de Play/Pause subsequente
-    const togglePlay = (e) => {
+    const togglePlay = async (e) => {
         if (e) {
             e.stopPropagation();
         }
@@ -112,32 +137,27 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
         const video = videoRef.current;
         if (!video) return;
 
-        if (video.paused) {
-            video.play();
-            setIsPlaying(true);
-            showControlsBriefly();
-        } else {
-            video.pause();
-            setIsPlaying(false);
-            setShowControls(true); // Mantém controles visíveis se pausado
+        try {
+            if (video.paused) {
+                await video.play();
+                setIsPlaying(true);
+                showControlsBriefly();
+            } else {
+                video.pause();
+                setIsPlaying(false);
+                setShowControls(true);
+            }
+        } catch (err) {
+            console.error("Erro no toggle:", err);
         }
     };
 
-    // Mostrar controles temporariamente
-    const showControlsBriefly = () => {
-        setShowControls(true);
-        if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-        controlsTimeoutRef.current = setTimeout(() => {
-            if (videoRef.current && !videoRef.current.paused) {
-                setShowControls(false);
-            }
-        }, 3000);
-    };
-
     const handleContainerClick = (e) => {
+        // Se ainda não interagiu, tenta o unmute/play inicial
         if (!hasInteracted) {
             handleInitialInteraction(e);
         } else {
+            // Se já interagiu, apenas alterna play/pause
             togglePlay(e);
         }
     };
@@ -185,6 +205,8 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                 }}
                 onWaiting={() => console.log("Buffering...")}
                 onPlaying={() => setIsPlaying(true)}
+                muted
+                autoPlay
             />
 
             {/* OVERLAY INICIAL (TAP TO UNMUTE) */}
