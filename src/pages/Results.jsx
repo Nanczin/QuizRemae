@@ -14,20 +14,22 @@ const Results = () => {
     const controlsTimeoutRef = useRef(null);
 
     const playerRef = useRef(null);
-    // URL DO SEU VÍDEO MP4 (Hospede no Bunny.net, AWS S3 ou no próprio projeto)
-    const VIDEO_URL = "/vsl quiz.mp4";
+    // Encoder URL para evitar erros com espaços
+    const VIDEO_URL = "/vsl%20quiz.mp4";
 
-    // Initialize HTML5 Video Logic (cleaner than YouTube iframe)
+    // Initialize HTML5 Video Logic
     useEffect(() => {
         bgm.stop();
         const video = playerRef.current;
         if (video) {
-            // Attempt autoplay
-            video.play().catch(() => {
-                // Expected auto-play failure if not muted, but we set muted=true in JSX
-                console.log("Autoplay blocked, waiting for interaction");
-            });
-            setDuration(video.duration || 0);
+            // Ensure muted autoplay is attempted
+            video.muted = true;
+            video.play().catch(() => console.log("Autoplay paused waiting for user"));
+
+            // Listener for duration
+            const updateDur = () => setDuration(video.duration);
+            video.addEventListener('loadedmetadata', updateDur);
+            return () => video.removeEventListener('loadedmetadata', updateDur);
         }
     }, []);
 
@@ -42,17 +44,25 @@ const Results = () => {
         }
     };
 
-    const handleEnableAudio = () => {
+    const handleEnableAudio = async () => {
         const video = playerRef.current;
         if (video) {
-            video.muted = false;
-            video.volume = 1.0;
-            video.currentTime = 0; // Restart hook for impact
-            video.play().then(() => {
+            try {
+                video.muted = false;
+                video.volume = 1.0;
+                // video.currentTime = 0; // Removed to prevent seeking issues on some WebViews
+
+                await video.play();
+
                 setIsAudioEnabled(true);
                 setIsPlaying(true);
                 setShowControls(false);
-            }).catch(e => console.error("Playback failed:", e));
+            } catch (error) {
+                console.error("Playback failed:", error);
+                // Force UI update even if promise lags, to assume user intent
+                setIsAudioEnabled(true);
+                setIsPlaying(true);
+            }
         }
     };
 
