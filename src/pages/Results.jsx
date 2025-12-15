@@ -130,7 +130,8 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
 
     // Controle de Play/Pause subsequente
     const togglePlay = async (e) => {
-        if (e) {
+        // Garantir que o evento não suba para o container se vier do botão
+        if (e && e.stopPropagation) {
             e.stopPropagation();
         }
 
@@ -138,17 +139,19 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
         if (!video) return;
 
         try {
-            if (video.paused) {
+            if (video.paused || video.ended) {
                 await video.play();
                 setIsPlaying(true);
                 showControlsBriefly();
             } else {
                 video.pause();
                 setIsPlaying(false);
-                setShowControls(true);
+                setShowControls(true); // Mantém controles visíveis ao pausar
             }
         } catch (err) {
             console.error("Erro no toggle:", err);
+            // Se falhar o play, força update de estado
+            setIsPlaying(!video.paused);
         }
     };
 
@@ -263,7 +266,7 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                 pointerEvents: (showControls || !isPlaying) && hasInteracted ? 'auto' : 'none'
             }}>
                 <button
-                    onClick={(e) => { e.stopPropagation(); togglePlay(); }}
+                    onClick={(e) => togglePlay(e)}
                     style={{
                         background: 'transparent',
                         border: 'none',
