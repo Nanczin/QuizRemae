@@ -12,12 +12,81 @@ const Results = () => {
 
     const controlsTimeoutRef = useRef(null);
 
+    const playerRef = useRef(null);
+    const [duration, setDuration] = useState(0);
+
+    // Initialize YouTube API
     useEffect(() => {
         bgm.stop();
+
+        // Load YouTube IFrame API if not already loaded
+        if (!window.YT) {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        }
+
+        // Setup success callback
+        window.onYouTubeIframeAPIReady = () => {
+            initializePlayer();
+        };
+
+        // If API is already ready (navigated back)
+        if (window.YT && window.YT.Player) {
+            initializePlayer();
+        }
+
         return () => {
-            if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+            if (playerRef.current && playerRef.current.destroy) {
+                // playerRef.current.destroy(); // Optional: might want to keep it
+            }
         };
     }, []);
+
+    const initializePlayer = () => {
+        playerRef.current = new window.YT.Player('vsl-player', {
+            videoId: 'xeTISviozS4',
+            playerVars: {
+                autoplay: 1,
+                controls: 0,
+                modestbranding: 1,
+                rel: 0,
+                showinfo: 0,
+                iv_load_policy: 3,
+                loop: 1,
+                playlist: 'xeTISviozS4',
+                playsinline: 1
+            },
+            events: {
+                'onReady': onPlayerReady,
+                'onStateChange': onPlayerStateChange
+            }
+        });
+    };
+
+    const onPlayerReady = (event) => {
+        setDuration(event.target.getDuration());
+
+        // Auto-play logic from redirect
+        if (location.state?.autoPlay) {
+            // Try to play unmuted, but fallback to muted if browser blocks
+            event.target.mute(); // Start muted to ensure play
+            event.target.playVideo();
+            // We don't set isAudioEnabled=true here, waiting for user click to unmute
+        }
+    };
+
+    const onPlayerStateChange = (event) => {
+        // YT.PlayerState.PLAYING = 1
+        if (event.data === 1) {
+            setIsPlaying(true);
+            setDuration(event.target.getDuration()); // Update duration just in case
+        } else if (event.data === 2) { // PAUSED
+            setIsPlaying(false);
+            setShowControls(true);
+        }
+    };
 
     const handleInteraction = () => {
         if (!isAudioEnabled) return;
@@ -34,54 +103,52 @@ const Results = () => {
     };
 
     const handleEnableAudio = () => {
-        if (videoRef.current) {
-            const iframe = videoRef.current;
-            iframe.contentWindow.postMessage('{"event":"command","func":"unMute","args":""}', '*');
-            iframe.contentWindow.postMessage('{"event":"command","func":"seekTo","args":[0, true]}', '*');
-            iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+        if (playerRef.current && playerRef.current.unMute) {
+            playerRef.current.unMute();
+            playerRef.current.setVolume(100);
+            playerRef.current.seekTo(0);
+            playerRef.current.playVideo();
 
             setIsAudioEnabled(true);
-            setIsPlaying(true);
             setShowControls(false);
         }
     };
 
     const togglePlay = () => {
-        if (videoRef.current) {
-            const iframe = videoRef.current;
-            if (isPlaying) {
-                iframe.contentWindow.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
-                setShowControls(true);
-                if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
+        if (playerRef.current && playerRef.current.getPlayerState) {
+            const state = playerRef.current.getPlayerState();
+
+            // Always try to unmute when interacting
+            playerRef.current.unMute();
+
+            if (state === 1) { // Playing
+                playerRef.current.pauseVideo();
             } else {
-                iframe.contentWindow.postMessage('{"event":"command","func":"playVideo","args":""}', '*');
+                playerRef.current.playVideo();
                 setShowControls(false);
             }
-            setIsPlaying(!isPlaying);
         }
     };
 
     useEffect(() => {
         let interval;
-        if (isPlaying && isAudioEnabled) {
+        if (isPlaying) {
             interval = setInterval(() => {
-                setProgress((prev) => (prev >= 100 ? 0 : prev + 0.1));
-            }, 1000);
+                if (playerRef.current && playerRef.current.getCurrentTime) {
+                    const current = playerRef.current.getCurrentTime();
+                    const total = duration || playerRef.current.getDuration() || 1;
+                    const param = (current / total) * 100;
+                    setProgress(param);
+                }
+            }, 500); // Check every 500ms
         }
         return () => clearInterval(interval);
-    }, [isPlaying, isAudioEnabled]);
+    }, [isPlaying, duration]);
 
     const navigate = useNavigate();
     const location = useLocation();
 
-    useEffect(() => {
-        if (location.state?.autoPlay && !isAudioEnabled) {
-            // Small timeout to ensure iframe is ready/loaded slightly
-            setTimeout(() => {
-                handleEnableAudio();
-            }, 1000);
-        }
-    }, [location]);
+    // Removed old autoPlay logic hook as it's handled in onPlayerReady now
 
     const handleCheckout = (plan) => {
         window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
@@ -157,25 +224,14 @@ const Results = () => {
                         }}
                     ></div>
 
-                    <iframe
-                        ref={videoRef}
-                        src={`https://www.youtube.com/embed/xeTISviozS4?enablejsapi=1&autoplay=1&mute=1&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&loop=1&playlist=xeTISviozS4&playsinline=1&origin=${typeof window !== 'undefined' ? window.location.origin : ''}`}
-                        title="VSL Video"
-                        loading="eager"
-                        fetchpriority="high"
-                        frameBorder="0"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                        allowFullScreen
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            transform: 'scale(1.05)',
-                            pointerEvents: isAudioEnabled ? 'auto' : 'none'
-                        }}
-                    ></iframe>
+                    <div id="vsl-player" style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        transform: 'scale(1.05)',
+                    }}></div>
 
                     {/* Custom Controls */}
                     {isAudioEnabled && (
