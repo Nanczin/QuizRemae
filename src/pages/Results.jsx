@@ -127,13 +127,19 @@ const Results = () => {
         if (playerRef.current && playerRef.current.getPlayerState) {
             const state = playerRef.current.getPlayerState();
 
-            // Always try to unmute when interacting
-            playerRef.current.unMute();
+            // Always ensure audio is on
+            if (playerRef.current.isMuted()) {
+                playerRef.current.unMute();
+            }
 
-            if (state === 1) { // Playing
+            // 1 = Playing, 2 = Paused, 0 = Ended, 3 = Buffering, 5 = Cued
+            if (state === 1) {
                 playerRef.current.pauseVideo();
+                setIsPlaying(false);
+                setShowControls(true);
             } else {
                 playerRef.current.playVideo();
+                setIsPlaying(true);
                 setShowControls(false);
             }
         }
@@ -211,7 +217,7 @@ const Results = () => {
                     style={{
                         width: '100%',
                         position: 'relative',
-                        paddingBottom: '70%', // Increased height for better mobile presence
+                        paddingBottom: '56.25%', // Back to 16:9 to avoid black bars with scale
                         marginBottom: '40px',
                         borderRadius: '16px',
                         boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
@@ -221,8 +227,15 @@ const Results = () => {
                     }}>
 
                     {/* Interaction Layer - Always active to prevent direct YT interaction */}
+                    {/* Interaction Layer - Always active to prevent direct YT interaction */}
                     <div
-                        onClick={isAudioEnabled ? togglePlay : undefined}
+                        onClick={() => {
+                            if (!isAudioEnabled) {
+                                handleEnableAudio();
+                            } else {
+                                togglePlay();
+                            }
+                        }}
                         style={{
                             position: 'absolute',
                             top: 0,
@@ -230,7 +243,7 @@ const Results = () => {
                             width: '100%',
                             height: '100%',
                             zIndex: 20, // Higher than video, lower than controls/overlay
-                            cursor: isAudioEnabled ? 'pointer' : 'default',
+                            cursor: 'pointer',
                             // On mobile, tap to toggle controls/play
                             touchAction: 'manipulation'
                         }}
@@ -242,7 +255,7 @@ const Results = () => {
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        transform: 'scale(1.35)', // Increased scale to push YT UI out of view
+                        transform: 'scale(1.10)', // Minimal scale to cover borders without cutting content
                         pointerEvents: 'none' // Crucial: Disable all direct interaction with iframe
                     }}></div>
 
