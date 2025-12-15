@@ -125,21 +125,24 @@ const Results = () => {
     };
 
     const togglePlay = () => {
-        if (!playerRef.current) return;
+        const player = playerRef.current;
+        if (!player || !player.getPlayerState) return;
 
-        // Force Unmute if seemingly muted
-        if (playerRef.current.isMuted && playerRef.current.isMuted()) {
-            playerRef.current.unMute();
-        }
+        const state = player.getPlayerState();
 
-        // Toggle logic based on current UI state for instant feedback
-        if (isPlaying) {
-            if (playerRef.current.pauseVideo) playerRef.current.pauseVideo();
+        // 1 = Playing
+        if (state === 1) {
+            player.pauseVideo();
             setIsPlaying(false);
             setShowControls(true);
         } else {
-            if (playerRef.current.playVideo) playerRef.current.playVideo();
+            // UnMute and Max Volume BEFORE playing to ensure sound
+            if (player.unMute) player.unMute();
+            if (player.setVolume) player.setVolume(100);
+
+            player.playVideo();
             setIsPlaying(true);
+            setIsAudioEnabled(true);
             setShowControls(false);
         }
     };
