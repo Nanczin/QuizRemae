@@ -13,97 +13,27 @@ const Results = () => {
     const controlsTimeoutRef = useRef(null);
 
     const playerRef = useRef(null);
-    const [duration, setDuration] = useState(0);
+    // URL DO SEU VÍDEO MP4 (Hospede no Bunny.net, AWS S3 ou no próprio projeto)
+    const VIDEO_URL = "/vsl quiz.mp4";
 
-    // Initialize YouTube API
+    // Initialize HTML5 Video Logic (cleaner than YouTube iframe)
     useEffect(() => {
         bgm.stop();
-
-        // Load YouTube IFrame API if not already loaded
-        if (!window.YT) {
-            const tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            const firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        const video = playerRef.current;
+        if (video) {
+            // Attempt autoplay
+            video.play().catch(() => {
+                // Expected auto-play failure if not muted, but we set muted=true in JSX
+                console.log("Autoplay blocked, waiting for interaction");
+            });
+            setDuration(video.duration || 0);
         }
-
-        // Setup success callback
-        window.onYouTubeIframeAPIReady = () => {
-            initializePlayer();
-        };
-
-        // If API is already ready (navigated back)
-        if (window.YT && window.YT.Player) {
-            initializePlayer();
-        }
-
-        return () => {
-            if (playerRef.current && playerRef.current.destroy) {
-                // playerRef.current.destroy(); // Optional: might want to keep it
-            }
-        };
     }, []);
-
-    const initializePlayer = () => {
-        playerRef.current = new window.YT.Player('vsl-player', {
-            videoId: 'xeTISviozS4',
-            playerVars: {
-                autoplay: 1,
-                controls: 0, // Restore custom controls
-                modestbranding: 1,
-                rel: 0,
-                showinfo: 0,
-                iv_load_policy: 3,
-                loop: 1,
-                playlist: 'xeTISviozS4',
-                playsinline: 1
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
-            }
-        });
-    };
-
-    const onPlayerReady = (event) => {
-        setDuration(event.target.getDuration());
-
-        // Force play (muted) ensures autoplay works on most mobile browsers/Instagram
-        event.target.mute();
-        event.target.playVideo();
-
-        // Fallback: Ensure it starts if the initial attempt failed
-        const checkPlay = setInterval(() => {
-            if (playerRef.current && playerRef.current.getPlayerState() !== 1) { // 1 = Playing
-                playerRef.current.mute();
-                playerRef.current.playVideo();
-            } else {
-                clearInterval(checkPlay);
-            }
-        }, 1000);
-
-        // Auto-cleanup interval after 5s to avoid infinite loops
-        setTimeout(() => clearInterval(checkPlay), 5000);
-    };
-
-    const onPlayerStateChange = (event) => {
-        // YT.PlayerState.PLAYING = 1
-        if (event.data === 1) {
-            setIsPlaying(true);
-            setDuration(event.target.getDuration()); // Update duration just in case
-        } else if (event.data === 2) { // PAUSED
-            setIsPlaying(false);
-            setShowControls(true);
-        }
-    };
 
     const handleInteraction = () => {
         if (!isAudioEnabled) return;
-
         setShowControls(true);
-
         if (controlsTimeoutRef.current) clearTimeout(controlsTimeoutRef.current);
-
         if (isPlaying) {
             controlsTimeoutRef.current = setTimeout(() => {
                 setShowControls(false);
@@ -112,50 +42,43 @@ const Results = () => {
     };
 
     const handleEnableAudio = () => {
-        if (playerRef.current) {
-            // Force volume max and unmute
-            if (playerRef.current.setVolume) playerRef.current.setVolume(100);
-            if (playerRef.current.unMute) playerRef.current.unMute();
-            if (playerRef.current.playVideo) playerRef.current.playVideo();
-
-            setIsAudioEnabled(true);
-            setIsPlaying(true);
-            setShowControls(false);
+        const video = playerRef.current;
+        if (video) {
+            video.muted = false;
+            video.volume = 1.0;
+            video.currentTime = 0; // Restart hook for impact
+            video.play().then(() => {
+                setIsAudioEnabled(true);
+                setIsPlaying(true);
+                setShowControls(false);
+            }).catch(e => console.error("Playback failed:", e));
         }
     };
 
     const togglePlay = () => {
-        const player = playerRef.current;
-        if (!player || !player.getPlayerState) return;
+        const video = playerRef.current;
+        if (!video) return;
 
-        const state = player.getPlayerState();
-        const isMuted = player.isMuted ? player.isMuted() : false;
-
-        // If it's playing but muted (Instagram Autoplay state), Unmute instead of Pause
-        if (state === 1 && isMuted) {
-            player.unMute();
-            player.setVolume(100);
-            setIsAudioEnabled(true);
+        if (video.paused || video.ended) {
+            // Ensure sound on play
+            if (video.muted) video.muted = false;
+            video.play();
             setIsPlaying(true);
             setShowControls(false);
-            return;
-        }
-
-        // Standard Toggle Logic
-        // 1 = Playing
-        if (state === 1) {
-            player.pauseVideo();
+        } else {
+            video.pause();
             setIsPlaying(false);
             setShowControls(true);
-        } else {
-            // UnMute and Max Volume BEFORE playing to ensure sound
-            if (player.unMute) player.unMute();
-            if (player.setVolume) player.setVolume(100);
+        }
+    };
 
-            player.playVideo();
-            setIsPlaying(true);
-            setIsAudioEnabled(true);
-            setShowControls(false);
+    const handleTimeUpdate = () => {
+        const video = playerRef.current;
+        if (video) {
+            const current = video.currentTime;
+            const total = video.duration || 1;
+            setProgress((current / total) * 100);
+            if (!duration || duration !== total) setDuration(total);
         }
     };
 
@@ -243,15 +166,29 @@ const Results = () => {
 
 
                     {/* YouTube Iframe - Blocked Interaction */}
-                    <div id="vsl-player" style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        transform: 'scale(1.00)', // Full image, no zoom to ensure edges are visible
-                        pointerEvents: 'none' // Block direct Youtube access
-                    }}></div>
+                    {/* Native HTML5 Video Player */}
+                    <video
+                        ref={playerRef}
+                        src={VIDEO_URL}
+                        className="vsl-video"
+                        playsInline
+                        webkit-playsinline="true"
+                        disablePictureInPicture
+                        loop
+                        muted // Start muted for autoplay policy
+                        autoPlay // Attempt autoplay
+                        onTimeUpdate={handleTimeUpdate}
+                        onEnded={() => setIsPlaying(false)}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover', // Ensures full screen fill
+                            // No pointer events on video itself to prevent native menu
+                        }}
+                    />
 
                     {/* Interaction Layer - Master Controller */}
                     <div
