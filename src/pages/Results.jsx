@@ -7,135 +7,82 @@ import { bgm } from '../utils/sounds';
 // CONFIGURAÇÕES DA VSL
 // ==========================================
 const VSL_CONFIG = {
-    // URL DE TESTE EXTERNA (Google Storage) para validar o Player
-    // Se isso tocar, o problema é o seu arquivo MP4 ou o servidor Vercel
-    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
+    // Voltando para o seu vídeo.
+    // IMPORTANTE: Se não tocar, o problema é o ARQUIVO (muito pesado ou codec errado).
+    // Recomendo comprimir para < 30MB ou hospedar no Panda/Vimeo/S3.
+    videoUrl: "/vsl-quiz.mp4",
     offerDelaySeconds: 0,
     primaryColor: '#FB7C80'
 };
 
 // ==========================================
-// COMPONENT: VSL PLAYER (DEBUG & MVP VERSION)
+// COMPONENT: VSL PLAYER (FINAL ROBUST VERSION)
 // ==========================================
 const VSLPlayer = ({ onProgress, onEnded }) => {
     const videoRef = useRef(null);
-    const [debugLogs, setDebugLogs] = useState([]);
     const [isPlaying, setIsPlaying] = useState(false);
     const [needsInteraction, setNeedsInteraction] = useState(true);
 
-    const log = (msg) => {
-        setDebugLogs(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString().split(' ')[0]}: ${msg}`]);
-        console.log(`[VSL DEBUG]: ${msg}`);
-    };
-
     // 1. Setup inicial
     useEffect(() => {
-        bgm.stop(); // Garante q a música de fundo pare
+        bgm.stop();
         const video = videoRef.current;
         if (!video) return;
 
-        // Force configs
-        video.muted = true; // Obrigatório para autoplay
+        // Configurações vitais para WebView
+        video.muted = true;
         video.playsInline = true;
         video.setAttribute('playsinline', 'true');
         video.setAttribute('webkit-playsinline', 'true');
-
-        // Android WeChat/Some Browsers fallback
         video.setAttribute('x5-video-player-type', 'h5-page');
-        video.setAttribute('x5-video-player-fullscreen', 'true');
 
-        // Check de REDE para diagnóstico (Verifica se está retornando HTML em vez de VIDEO)
-        fetch(VSL_CONFIG.videoUrl, { method: 'HEAD' })
-            .then(res => {
-                const type = res.headers.get('content-type');
-                const size = res.headers.get('content-length');
-                log(`HEAD Check: Type=${type} | Size=${(size / 1024 / 1024).toFixed(2)}MB`);
-
-                if (type && type.includes('text/html')) {
-                    log('CRITICAL: Server returning HTML checking URL! Fix routing.');
-                }
-            })
-            .catch(err => log('HEAD Check Failed: ' + err.message));
-
-        // Debug Events
-        const events = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'pause', 'error', 'stalled', 'suspend', 'waiting'];
-        events.forEach(evt => {
-            video.addEventListener(evt, () => {
-                if (evt === 'error') {
-                    const err = video.error;
-                    log(`ERROR EVENT: Code=${err.code} | Msg=${err.message}`);
-                    // Tenta detalhar erros de rede
-                } else if (evt !== 'timeupdate') {
-                    // log(`Event: ${evt}`); 
-                }
-
-                if (evt === 'playing') setIsPlaying(true);
-                if (evt === 'pause') setIsPlaying(false);
-            });
+        // Debug silencioso no console apenas
+        video.addEventListener('error', (e) => {
+            console.error("Video Error:", video.error);
         });
 
-        // Tentativa de Autoplay imediato (Muted)
-        log('Attempting Autoplay Muted...');
-        video.play().then(() => {
-            log('Autoplay Success (Muted)');
-            setIsPlaying(true);
-        }).catch(e => {
-            log('Autoplay Blocked: ' + e.message);
-            setIsPlaying(false);
-        });
-
+        // Tentativa de Autoplay
+        video.play().then(() => setIsPlaying(true)).catch(() => setIsPlaying(false));
     }, []);
 
-    // 2. Interação do Usuário (O segredo do Unlock)
+    // 2. Interação / Desbloqueio
     const handleUnlockAudio = async (e) => {
-        // Prevenir comportamento padrão apenas se necessário
         if (e && e.stopPropagation) e.stopPropagation();
 
         const video = videoRef.current;
         if (!video) return;
 
-        log('User Tapped -> Unlock Sequence');
-
         try {
             video.muted = false;
-            video.currentTime = 0; // Reinicia para garantir sync
-
-            // Promise explícita
+            video.currentTime = 0;
             await video.play();
-
-            log('Play with Audio Success');
             setNeedsInteraction(false);
             setIsPlaying(true);
         } catch (err) {
-            log('Unlock Failed: ' + err.message);
-
-            // Fallback nuclear: Load + Play
-            log('Trying Fallback: Load+Play');
-            video.load();
-            video.oncanplay = () => {
-                video.muted = false;
-                video.play()
-                    .then(() => {
-                        log('Fallback Success');
-                        setNeedsInteraction(false);
-                        setIsPlaying(true);
-                    })
-                    .catch(e2 => log('Fallback Error: ' + e2.message));
-            };
+            console.log('Unlock failed, trying fallback...');
+            video.load(); // Fallback pesado
+            video.muted = false;
+            video.play()
+                .then(() => {
+                    setNeedsInteraction(false);
+                    setIsPlaying(true);
+                })
+                .catch(e => console.error("Final Play Error:", e));
         }
     };
 
-    // 3. Toggle Play simplificado
+    // 3. Toggle Play
     const togglePlay = (e) => {
         if (e && e.stopPropagation) e.stopPropagation();
-
         const video = videoRef.current;
         if (!video) return;
 
         if (video.paused) {
-            video.play().catch(e => log('Toggle Play Error: ' + e.message));
+            video.play();
+            setIsPlaying(true);
         } else {
             video.pause();
+            setIsPlaying(false);
         }
     };
 
@@ -149,7 +96,7 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
     return (
         <div
             className="vsl-container"
-            style={{ position: 'relative', paddingBottom: '56.25%', background: '#000', borderRadius: '16px', overflow: 'hidden' }}
+            style={{ position: 'relative', paddingBottom: '56.25%', background: '#000', borderRadius: '16px', overflow: 'hidden', boxShadow: '0 20px 50px rgba(0,0,0,0.3)' }}
             onClick={(e) => needsInteraction ? handleUnlockAudio(e) : togglePlay(e)}
         >
             <video
@@ -159,8 +106,8 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                 playsInline
                 webkit-playsinline="true"
                 disablePictureInPicture
-                muted // Começa mudo
-                autoPlay // Tenta autoplay
+                muted
+                autoPlay
                 loop={false}
                 preload="auto"
                 onTimeUpdate={handleTimeUpdate}
@@ -168,50 +115,65 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                     setIsPlaying(false);
                     if (onEnded) onEnded();
                 }}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
             />
 
-            {/* OVERLAY DE DESBLOQUEIO (CLIQUE ÚNICO) */}
+            {/* OVERLAY DE DESBLOQUEIO */}
             {needsInteraction && (
                 <div style={{
                     position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    zIndex: 20, background: 'rgba(0,0,0,0.1)', // Levemente escurecido
+                    zIndex: 20, background: 'rgba(0,0,0,0.3)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
                 }}>
                     <div className="pulse-animation" style={{
-                        background: '#EF4444', color: 'white', padding: '16px 24px', borderRadius: '50px',
-                        fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px',
-                        boxShadow: '0 4px 15px rgba(239, 68, 68, 0.5)',
-                        pointerEvents: 'none' // Clica através dele para o container
+                        background: '#EF4444',
+                        color: 'white',
+                        padding: '16px 24px',
+                        borderRadius: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)',
+                        backdropFilter: 'blur(4px)',
+                        border: '2px solid rgba(255,255,255,0.3)',
+                        pointerEvents: 'none'
                     }}>
-                        <VolumeX size={24} />
-                        TOQUE PARA OUVIR
+                        <VolumeX size={32} color="white" />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: 'white', fontWeight: '800', fontSize: '1.1rem', textTransform: 'uppercase' }}>
+                                TOQUE PARA OUVIR
+                            </span>
+                            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem' }}>
+                                O vídeo já começou
+                            </span>
+                        </div>
                     </div>
                 </div>
             )}
 
-            {/* DEBUGGER VISUAL (SOLUÇÃO P/ WEBVIEW - REMOVA EM PRODUÇÃO SE QUISER) */}
-            <div style={{
-                position: 'absolute', bottom: 0, left: 0, right: 0,
-                background: 'rgba(0,0,0,0.7)', color: '#0F0',
-                fontSize: '10px', fontFamily: 'monospace', padding: '4px 8px',
-                pointerEvents: 'none', zIndex: 30, opacity: 0.9, textAlign: 'left'
-            }}>
-                DEBUG:
-                {debugLogs.map((l, i) => <span key={i} style={{ display: 'block' }}>{l}</span>)}
-            </div>
-
-            {/* CONTROLES SIMPLIFICADOS (APÓS UNLOCK) */}
+            {/* CONTROLES SIMPLIFICADOS */}
             {!needsInteraction && (
                 <div style={{
-                    position: 'absolute', bottom: '30px', left: '16px',
-                    zIndex: 25, pointerEvents: 'none'
+                    position: 'absolute', bottom: 0, left: 0, right: 0,
+                    padding: '20px',
+                    background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                    display: 'flex', alignItems: 'center', gap: '15px',
+                    opacity: isPlaying ? 0 : 1, // Esconde quando toca, mostra quando pausa
+                    transition: 'opacity 0.3s',
+                    pointerEvents: 'none'
                 }}>
-                    {/* Ícone de estado apenas */}
-                    {!isPlaying && <div style={{
-                        background: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '50%'
-                    }}>
-                        <Play size={32} fill="white" color="white" />
-                    </div>}
+                    <button style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', pointerEvents: 'auto' }} onClick={togglePlay}>
+                        {!isPlaying ? <Play size={28} fill="white" /> : <Pause size={28} fill="white" />}
+                    </button>
+                    {/* Barra de Progresso Simples */}
+                    <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{
+                            width: `${(videoRef.current?.currentTime / (videoRef.current?.duration || 1)) * 100}%`,
+                            height: '100%',
+                            background: VSL_CONFIG.primaryColor
+                        }} />
+                    </div>
                 </div>
             )}
         </div>
