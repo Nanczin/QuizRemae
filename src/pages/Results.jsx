@@ -7,8 +7,9 @@ import { bgm } from '../utils/sounds';
 // CONFIGURAÇÕES DA VSL
 // ==========================================
 const VSL_CONFIG = {
-    // Adicionamos timestamp para evitar cache de versões corrompidas/HTML
-    videoUrl: "/vsl-quiz.mp4?t=" + new Date().getTime(),
+    // URL DE TESTE EXTERNA (Google Storage) para validar o Player
+    // Se isso tocar, o problema é o seu arquivo MP4 ou o servidor Vercel
+    videoUrl: "https://storage.googleapis.com/gtv-videos-bucket/sample/ForBiggerBlazes.mp4",
     offerDelaySeconds: 0,
     primaryColor: '#FB7C80'
 };
