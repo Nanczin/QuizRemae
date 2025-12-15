@@ -249,7 +249,7 @@ const Results = () => {
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        transform: 'scale(1.35)', // Zoom to hide YT branding/corners
+                        transform: 'scale(1.00)', // Full image, no zoom to ensure edges are visible
                         pointerEvents: 'none' // Block direct Youtube access
                     }}></div>
 
@@ -275,35 +275,66 @@ const Results = () => {
                         }}
                     ></div>
 
-                    {/* Custom Controls - ONLY Pause/Play Button */}
+                    {/* Custom Controls - Play/Pause + Progress Bar */}
                     {isAudioEnabled && (
                         <div
+                            onClick={(e) => e.stopPropagation()} // Stop propagation if clicking strictly on controls bar
                             style={{
                                 position: 'absolute',
-                                bottom: '10px',
-                                left: '10px',
-                                pointerEvents: 'none', // Clicks pass through to the Interaction Layer
-                                zIndex: 30,
+                                bottom: 0,
+                                left: 0,
+                                right: 0,
+                                background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
+                                padding: '20px 16px 16px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                gap: '16px',
                                 opacity: showControls || !isPlaying ? 1 : 0,
-                                transition: 'opacity 0.3s'
+                                transition: 'opacity 0.3s',
+                                zIndex: 30,
+                                pointerEvents: 'none' // Allow hits to pass to interaction layer mostly
                             }}
                         >
                             <button
+                                onClick={(e) => {
+                                    e.stopPropagation(); // Explicit button click
+                                    togglePlay();
+                                }}
                                 style={{
-                                    background: 'rgba(0,0,0,0.6)',
+                                    background: 'none',
                                     border: 'none',
-                                    borderRadius: '50%',
-                                    width: '48px',
-                                    height: '48px',
+                                    color: 'white',
+                                    cursor: 'pointer',
+                                    padding: '4px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    color: 'white',
-                                    backdropFilter: 'blur(4px)'
+                                    pointerEvents: 'auto' // Re-enable pointer events for the button
                                 }}
                             >
                                 {isPlaying ? <Pause size={24} fill="white" /> : <Play size={24} fill="white" />}
                             </button>
+
+                            <div style={{
+                                flex: 1,
+                                height: '6px',
+                                background: 'rgba(255,255,255,0.3)',
+                                borderRadius: '3px',
+                                position: 'relative',
+                                overflow: 'hidden'
+                            }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    top: 0,
+                                    left: 0,
+                                    bottom: 0,
+                                    width: `${progress}%`,
+                                    background: '#FB7C80',
+                                    borderRadius: '3px',
+                                    transition: 'width 0.1s linear'
+                                }} />
+                            </div>
                         </div>
                     )}
 
