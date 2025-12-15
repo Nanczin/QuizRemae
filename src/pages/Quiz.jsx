@@ -260,7 +260,7 @@ const Quiz = () => {
                             </p>
 
                             <button
-                                onClick={() => navigate('/results')}
+                                onClick={() => navigate('/results', { state: { autoPlay: true } })}
                                 className="btn pulse-animation"
                                 style={{
                                     width: '100%',
@@ -293,13 +293,13 @@ const Quiz = () => {
                 {/* Achievement Overlay */}
                 {showAchievement && (
                     <div className="animate-fade-in" style={{
-                        position: 'absolute',
+                        position: 'fixed',
                         top: '0',
                         left: '0',
                         width: '100%',
                         height: '100%',
                         background: 'rgba(255,255,255,0.95)',
-                        zIndex: 50,
+                        zIndex: 9999,
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',

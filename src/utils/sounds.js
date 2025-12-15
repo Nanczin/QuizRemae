@@ -80,7 +80,7 @@ export const sfx = {
 export const bgm = new Howl({
     src: ['/bgm.mp3'],
     loop: true,
-    volume: 0.05,
+    volume: 0.10,
     html5: true,
     preload: true
 });
@@ -88,9 +88,9 @@ export const bgm = new Howl({
 export const toggleBGM = (play) => {
     if (play) {
         if (!bgm.playing()) bgm.play();
-        bgm.fade(0, 0.3, 1000);
+        bgm.fade(0, 0.5, 1000);
     } else {
-        bgm.fade(0.3, 0, 1000);
+        bgm.fade(0.5, 0, 1000);
         setTimeout(() => bgm.pause(), 1000);
     }
 };

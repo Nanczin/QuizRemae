@@ -64,15 +64,15 @@ const DiagnosisLoading = () => {
                         Diagnóstico Completo
                     </div>
 
-                    <h2 style={{ fontSize: '1.75rem', color: '#1F2937', marginBottom: '24px', lineHeight: '1.3' }}>
+                    <h2 style={{ fontSize: 'clamp(1.5rem, 5vw, 1.75rem)', color: '#1F2937', marginBottom: '24px', lineHeight: '1.3' }}>
                         Mãe, identificamos exatamente o que você precisa.
                     </h2>
 
-                    <p style={{ fontSize: '1.1rem', color: '#4B5563', marginBottom: '24px', lineHeight: '1.6', textAlign: 'left' }}>
+                    <p style={{ fontSize: 'clamp(1rem, 4vw, 1.1rem)', color: '#4B5563', marginBottom: '24px', lineHeight: '1.6', textAlign: 'left' }}>
                         A análise das suas respostas mostra que seu corpo está pronto para recuperar a forma, mas precisa do estímulo certo para reativar o metabolismo e fortalecer a musculatura abdominal sem causar lesões.
                     </p>
 
-                    <p style={{ fontSize: '1.1rem', color: '#4B5563', marginBottom: '32px', lineHeight: '1.6', textAlign: 'left' }}>
+                    <p style={{ fontSize: 'clamp(1rem, 4vw, 1.1rem)', color: '#4B5563', marginBottom: '32px', lineHeight: '1.6', textAlign: 'left' }}>
                         Criamos um plano personalizado que respeita sua rotina e foca em resultados rápidos e seguros.
                     </p>
 

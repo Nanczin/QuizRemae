@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Check, Star, ShieldCheck, Play, Pause, VolumeX } from 'lucide-react';
 import { bgm } from '../utils/sounds';
 
@@ -72,6 +72,16 @@ const Results = () => {
     }, [isPlaying, isAudioEnabled]);
 
     const navigate = useNavigate();
+    const location = useLocation();
+
+    useEffect(() => {
+        if (location.state?.autoPlay && !isAudioEnabled) {
+            // Small timeout to ensure iframe is ready/loaded slightly
+            setTimeout(() => {
+                handleEnableAudio();
+            }, 1000);
+        }
+    }, [location]);
 
     const handleCheckout = (plan) => {
         window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
@@ -162,7 +172,7 @@ const Results = () => {
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            transform: 'scale(1.01)',
+                            transform: 'scale(1.05)',
                             pointerEvents: isAudioEnabled ? 'auto' : 'none'
                         }}
                     ></iframe>
