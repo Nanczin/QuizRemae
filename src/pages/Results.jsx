@@ -45,25 +45,22 @@ const Results = () => {
         }
     };
 
-    const handleEnableAudio = async () => {
+    const handleEnableAudio = () => {
         const video = playerRef.current;
         if (video) {
-            try {
-                video.muted = false;
-                video.volume = 1.0;
-                // video.currentTime = 0; // Removed to prevent seeking issues on some WebViews
+            // Instant feedback
+            setIsAudioEnabled(true);
+            setIsPlaying(true);
+            setShowControls(false);
 
-                await video.play();
-
-                setIsAudioEnabled(true);
-                setIsPlaying(true);
-                setShowControls(false);
-            } catch (error) {
-                console.error("Playback failed:", error);
-                // Force UI update even if promise lags, to assume user intent
-                setIsAudioEnabled(true);
-                setIsPlaying(true);
-            }
+            // Execute logic
+            video.muted = false;
+            video.volume = 1.0;
+            video.play().catch(e => {
+                console.error("Play failed:", e);
+                // If play fails (e.g. data saver), we at least showed the controls.
+                // We keep isPlaying=true to let the user try the play button again if needed.
+            });
         }
     };
 
