@@ -49,7 +49,7 @@ const Results = () => {
             videoId: 'xeTISviozS4',
             playerVars: {
                 autoplay: 1,
-                controls: 0,
+                controls: 1, // Enable native controls for "Free Mode"
                 modestbranding: 1,
                 rel: 0,
                 showinfo: 0,
@@ -242,74 +242,18 @@ const Results = () => {
 
 
 
+                    {/* Native Player Container */}
                     <div id="vsl-player" style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        transform: 'scale(1.10)', // Minimal scale to cover borders without cutting content
-                        pointerEvents: 'none' // Crucial: Disable all direct interaction with iframe
+                        // Scale slightly to hide small black edges if needed, but keep controls usable
+                        transform: 'scale(1.02)',
+                        // Allow interaction ONLY after audio is enabled
+                        pointerEvents: isAudioEnabled ? 'auto' : 'none'
                     }}></div>
-
-                    {/* Custom Controls */}
-                    {isAudioEnabled && (
-                        <div
-                            onClick={(e) => e.stopPropagation()}
-                            style={{
-                                position: 'absolute',
-                                bottom: 0,
-                                left: 0,
-                                right: 0,
-                                background: 'linear-gradient(to top, rgba(0,0,0,0.8), transparent)',
-                                padding: '20px 16px 16px',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'space-between',
-                                gap: '16px',
-                                opacity: showControls || !isPlaying ? 1 : 0,
-                                transition: 'opacity 0.3s',
-                                pointerEvents: 'auto', // Allow clicking controls
-                                zIndex: 30 // Above interaction layer
-                            }}
-                        >
-                            <button
-                                onClick={togglePlay}
-                                style={{
-                                    background: 'none',
-                                    border: 'none',
-                                    color: 'white',
-                                    cursor: 'pointer',
-                                    padding: '4px',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}
-                            >
-                                {isPlaying ? <Pause size={24} fill="white" /> : <Play size={24} fill="white" />}
-                            </button>
-
-                            <div style={{
-                                flex: 1,
-                                height: '6px',
-                                background: 'rgba(255,255,255,0.3)',
-                                borderRadius: '3px',
-                                position: 'relative',
-                                overflow: 'hidden'
-                            }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    bottom: 0,
-                                    width: `${progress}%`,
-                                    background: '#FB7C80',
-                                    borderRadius: '3px',
-                                    transition: 'width 0.1s linear'
-                                }} />
-                            </div>
-                        </div>
-                    )}
 
                     {/* Overlay */}
                     {!isAudioEnabled && (
