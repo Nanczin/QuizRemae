@@ -1,139 +1,36 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ShieldCheck, Play, Pause, VolumeX } from 'lucide-react';
+import { Check, ShieldCheck } from 'lucide-react';
 import { bgm } from '../utils/sounds';
 
 // ==========================================
-// CONFIGURAÇÕES DA VSL (YOUTUBE)
+// CONFIGURAÇÕES DA VSL (YOUTUBE - TEXTING MODE)
 // ==========================================
 const VSL_CONFIG = {
-    // ID do vídeo do YouTube (extraído de https://youtu.be/xeTISviozS4)
+    // ID do vídeo do YouTube
     videoId: "xeTISviozS4",
-    offerDelaySeconds: 0, // Delay da oferta (em segundos)
+    offerDelaySeconds: 0,
     primaryColor: '#FB7C80'
 };
 
 // ==========================================
-// COMPONENT: YOUTUBE VSL PLAYER
+// COMPONENT: SIMPLE YOUTUBE PLAYER (IOS/WEBVIEW SAFE)
 // ==========================================
-const VSLPlayer = ({ onProgress, onEnded }) => {
-    const playerRef = useRef(null); // Referência para a instância do Player do YT
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [needsInteraction, setNeedsInteraction] = useState(true);
-    const [currentTime, setCurrentTime] = useState(0);
-    const [duration, setDuration] = useState(0);
-    const intervalRef = useRef(null);
+const VSLPlayer = ({ onProgress }) => {
+    // Como estamos usando iframe puro para compatibilidade máxima,
+    // não temos feedback real do progresso do vídeo.
+    // Usaremos um timer simples apenas para liberar a oferta, se precisar.
 
-    // Carrega a API do YouTube
     useEffect(() => {
         bgm.stop();
 
-        // Se a API já existe, inicializa direto. Se não, injeta o script.
-        if (!window.YT) {
-            const tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            const firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        }
+        // Simulação de progresso para liberar oferta baseada no tempo de "página aberta"
+        const timer = setInterval(() => {
+            if (onProgress) onProgress(9999); // Envia sinal que já passou do tempo
+        }, 1000);
 
-        // Callback global que o YouTube chama quando a API está pronta
-        window.onYouTubeIframeAPIReady = initializePlayer;
-
-        // Se o script já estava carregado antes (navegação interna), chama manual
-        if (window.YT && window.YT.Player) {
-            initializePlayer();
-        }
-
-        return () => {
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            // Opcional: destruir player ao sair, mas React costuma lidar bem só desmontando a div
-        };
-    }, []);
-
-    const initializePlayer = () => {
-        // Evita recriar se já existe
-        if (playerRef.current) return;
-
-        playerRef.current = new window.YT.Player('youtube-player', {
-            videoId: VSL_CONFIG.videoId,
-            width: '100%',
-            height: '100%',
-            playerVars: {
-                autoplay: 1,      // Tenta autoplay
-                mute: 1,          // Mudo para garantir autoplay
-                controls: 0,      // Esconde controles nativos (vamos usar os nossos)
-                rel: 0,           // Vídeos relacionados apenas do canal
-                modestbranding: 1,
-                playsinline: 1,   // Toca inline no iOS
-                fs: 0,            // Desabilita fullscreen nativo
-                disablekb: 1      // Desabilita teclado
-            },
-            events: {
-                'onReady': onPlayerReady,
-                'onStateChange': onPlayerStateChange
-            }
-        });
-    };
-
-    const onPlayerReady = (event) => {
-        // Assim que carrega, tenta tocar mutado
-        event.target.mute();
-        event.target.playVideo();
-        setDuration(event.target.getDuration());
-    };
-
-    const onPlayerStateChange = (event) => {
-        // Estado: 1 = Playing, 2 = Paused, 0 = Ended
-        if (event.data === window.YT.PlayerState.PLAYING) {
-            setIsPlaying(true);
-            startProgressTracking();
-        } else {
-            setIsPlaying(false);
-            stopProgressTracking();
-            if (event.data === window.YT.PlayerState.ENDED) {
-                if (onEnded) onEnded();
-            }
-        }
-    };
-
-    const startProgressTracking = () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-        intervalRef.current = setInterval(() => {
-            if (playerRef.current && playerRef.current.getCurrentTime) {
-                const time = playerRef.current.getCurrentTime();
-                setCurrentTime(time);
-                if (onProgress) onProgress(time);
-            }
-        }, 1000); // Checa a cada segundo
-    };
-
-    const stopProgressTracking = () => {
-        if (intervalRef.current) clearInterval(intervalRef.current);
-    };
-
-    // --- INTERAÇÕES ---
-
-    const handleUnlockAudio = () => {
-        if (playerRef.current) {
-            playerRef.current.unMute();
-            playerRef.current.seekTo(0); // Reinicia com som
-            playerRef.current.playVideo();
-            setNeedsInteraction(false);
-            setIsPlaying(true);
-        }
-    };
-
-    const togglePlay = () => {
-        if (!playerRef.current) return;
-
-        // Verifica estado diretamente se possível, ou usa nossa flag
-        const playerState = playerRef.current.getPlayerState();
-        if (playerState === window.YT.PlayerState.PLAYING) {
-            playerRef.current.pauseVideo();
-        } else {
-            playerRef.current.playVideo();
-        }
-    };
+        return () => clearInterval(timer);
+    }, [onProgress]);
 
     return (
         <div
@@ -147,113 +44,14 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
                 boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
             }}
         >
-            {/* DIV ONDE O YOUTUBE É INJETADO */}
-            <div
-                id="youtube-player"
+            <iframe
                 style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }}
-            />
-
-            {/* MÁSCARA TRANSPARENTE PARA INTERCEPTAR CLIQUES (SE NECESSÁRIO NOS CONTROLES) */}
-            {/* O YouTube Iframe API às vezes bloqueia cliques se tiver camada em cima. 
-                Vamos deixar a camada de desbloqueio, mas depois remover para permitir play/pause nativo se falhar.
-                Mas como queremos controles customizados, manteremos camadas em cima. */}
-
-            {/* 1. OVERLAY DE DESBLOQUEIO */}
-            {needsInteraction && (
-                <div
-                    onClick={handleUnlockAudio}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 20,
-                        background: 'rgba(0,0,0,0)', // Transparente para ver o video rodando no fundo
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <div className="pulse-animation" style={{
-                        background: '#EF4444',
-                        color: 'white',
-                        padding: '16px 24px',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)',
-                        border: '2px solid rgba(255,255,255,0.3)',
-                        pointerEvents: 'none'
-                    }}>
-                        <VolumeX size={32} color="white" />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: 'white', fontWeight: '800', fontSize: '1.1rem', textTransform: 'uppercase' }}>
-                                TOQUE PARA OUVIR
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* 2. BOTÃO GIGANTE DE PLAY (QUANDO PAUSADO) */}
-            {!needsInteraction && !isPlaying && (
-                <div
-                    onClick={togglePlay}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 20,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: 'rgba(0,0,0,0.2)',
-                        cursor: 'pointer'
-                    }}
-                >
-                    <div style={{
-                        background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '24px',
-                        backdropFilter: 'blur(4px)', border: '2px solid rgba(255,255,255,0.5)',
-                        pointerEvents: 'none'
-                    }}>
-                        <Play size={48} fill="white" color="white" />
-                    </div>
-                </div>
-            )}
-
-            {/* 3. CAMADA DE INTERAÇÃO GERAL (PLAY/PAUSE NO VÍDEO INTEIRO) */}
-            {!needsInteraction && (
-                <div
-                    onClick={togglePlay}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: '60px', // Deixa espaço pra barra
-                        zIndex: 10,
-                        cursor: 'pointer'
-                    }}
-                />
-            )}
-
-            {/* 4. BARRA DE CONTROLES CUSTOMIZADA */}
-            {!needsInteraction && (
-                <div style={{
-                    position: 'absolute', bottom: 0, left: 0, right: 0,
-                    padding: '20px',
-                    background: 'linear-gradient(to top, rgba(0,0,0,0.9), transparent)',
-                    display: 'flex', alignItems: 'center', gap: '15px',
-                    zIndex: 30,
-                    opacity: isPlaying ? 0 : 1, // Auto-hide
-                    transition: 'opacity 0.3s',
-                }}>
-                    <button
-                        style={{ background: 'none', border: 'none', color: 'white', cursor: 'pointer', padding: '8px' }}
-                        onClick={(e) => { e.stopPropagation(); togglePlay(); }}
-                    >
-                        {!isPlaying ? <Play size={24} fill="white" /> : <Pause size={24} fill="white" />}
-                    </button>
-
-                    <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.3)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{
-                            width: `${(currentTime / (duration || 1)) * 100}%`,
-                            height: '100%',
-                            background: VSL_CONFIG.primaryColor,
-                            transition: 'width 0.5s linear'
-                        }} />
-                    </div>
-                </div>
-            )}
+                src={`https://www.youtube.com/embed/${VSL_CONFIG.videoId}?autoplay=1&mute=0&controls=1&playsinline=1&rel=0&modestbranding=1&fs=1`}
+                title="Vídeo de Apresentação"
+                frameBorder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                allowFullScreen
+            ></iframe>
         </div>
     );
 };
@@ -261,6 +59,7 @@ const VSLPlayer = ({ onProgress, onEnded }) => {
 
 const Results = () => {
     const [showOffer, setShowOffer] = useState(false);
+
     const navigate = useNavigate();
 
     const handleVideoProgress = (currentTime) => {
@@ -310,7 +109,7 @@ const Results = () => {
                     <VSLPlayer onProgress={handleVideoProgress} />
                 </div>
 
-                {/* --- CONTEÚDO DA CARTA DE VENDAS --- */}
+                {/* --- CONTEÚDO DA CARTA DE VENDAS (MOSTRADO APÓS DELAY) --- */}
                 <div style={{
                     opacity: showOffer ? 1 : 0,
                     display: showOffer ? 'block' : 'none',
