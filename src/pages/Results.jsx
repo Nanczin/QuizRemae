@@ -320,18 +320,22 @@ const Results = () => {
 
                     {/* Overlay */}
                     {!isAudioEnabled && (
-                        <div style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            background: 'rgba(0,0,0,0.1)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            zIndex: 40 // Highest priority
-                        }}>
+                        <div
+                            onClick={handleEnableAudio}
+                            style={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                background: 'rgba(0,0,0,0.1)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                zIndex: 40, // Highest priority
+                                cursor: 'pointer',
+                                touchAction: 'manipulation'
+                            }}>
                             <div style={{
                                 background: 'rgba(239, 68, 68, 0.95)',
                                 padding: '24px 32px',
