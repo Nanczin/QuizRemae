@@ -211,16 +211,19 @@ const Results = () => {
                         cursor: 'pointer'
                     }}>
 
-                    {/* Interaction Layer for Overlay Clicks */}
+                    {/* Interaction Layer - Always active to prevent direct YT interaction */}
                     <div
+                        onClick={isAudioEnabled ? togglePlay : undefined}
                         style={{
                             position: 'absolute',
                             top: 0,
                             left: 0,
                             width: '100%',
                             height: '100%',
-                            zIndex: 5,
-                            display: isAudioEnabled ? 'none' : 'block'
+                            zIndex: 20, // Higher than video, lower than controls/overlay
+                            cursor: isAudioEnabled ? 'pointer' : 'default',
+                            // On mobile, tap to toggle controls/play
+                            touchAction: 'manipulation'
                         }}
                     ></div>
 
@@ -230,7 +233,8 @@ const Results = () => {
                         left: 0,
                         width: '100%',
                         height: '100%',
-                        transform: 'scale(1.05)',
+                        transform: 'scale(1.35)', // Increased scale to push YT UI out of view
+                        pointerEvents: 'none' // Crucial: Disable all direct interaction with iframe
                     }}></div>
 
                     {/* Custom Controls */}
@@ -250,7 +254,8 @@ const Results = () => {
                                 gap: '16px',
                                 opacity: showControls || !isPlaying ? 1 : 0,
                                 transition: 'opacity 0.3s',
-                                pointerEvents: showControls || !isPlaying ? 'auto' : 'none'
+                                pointerEvents: 'auto', // Allow clicking controls
+                                zIndex: 30 // Above interaction layer
                             }}
                         >
                             <button
@@ -303,7 +308,7 @@ const Results = () => {
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            zIndex: 10
+                            zIndex: 40 // Highest priority
                         }}>
                             <div style={{
                                 background: 'rgba(239, 68, 68, 0.95)',
