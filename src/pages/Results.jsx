@@ -15,20 +15,28 @@ const Results = () => {
     const controlsTimeoutRef = useRef(null);
 
     const playerRef = useRef(null);
-    // Encoder URL para evitar erros com espaços
-    const VIDEO_URL = "/vsl-quiz.mp4";
+    // Adiciona timestamp para evitar cache de versão corrompida/antiga
+    const VIDEO_URL = `/vsl-quiz.mp4?t=${new Date().getTime()}`;
 
     // Initialize HTML5 Video Logic
     useEffect(() => {
         bgm.stop();
         const video = playerRef.current;
         if (video) {
-            // Ensure muted autoplay is attempted
             video.muted = true;
-            video.play().catch(() => console.log("Autoplay paused waiting for user"));
+            video.playsInline = true; // Force property
+            // Tenta autoplay silencioso
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(() => {
+                    console.log("Autoplay blocked/paused - waiting for user interaction");
+                });
+            }
 
             // Listener for duration
-            const updateDur = () => setDuration(video.duration);
+            const updateDur = () => {
+                if (video.duration && !isNaN(video.duration)) setDuration(video.duration);
+            };
             video.addEventListener('loadedmetadata', updateDur);
             return () => video.removeEventListener('loadedmetadata', updateDur);
         }
@@ -45,23 +53,42 @@ const Results = () => {
         }
     };
 
-    const handleEnableAudio = () => {
-        const video = playerRef.current;
-        if (video) {
-            // Instant feedback
-            setIsAudioEnabled(true);
-            setIsPlaying(true);
-            setShowControls(false);
+    const handleEnableAudio = (e) => {
+        if (e) e.stopPropagation();
 
-            // Execute logic
-            video.muted = false;
-            video.volume = 1.0;
-            video.play().catch(e => {
-                console.error("Play failed:", e);
-                // If play fails (e.g. data saver), we at least showed the controls.
-                // We keep isPlaying=true to let the user try the play button again if needed.
-            });
+        const video = playerRef.current;
+        if (!video) return;
+
+        // 1. UI Feedback Instantâneo
+        setIsAudioEnabled(true);
+        setIsPlaying(true);
+        setShowControls(false);
+
+        // 2. Desmutar e Tocar
+        video.muted = false;
+        video.volume = 1.0;
+
+        const playVideo = () => {
+            const playPromise = video.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(error => {
+                    console.error("Play failed:", error);
+                    // Se falhar o play direto, tentamos carregar e tocar (fix para alguns Androids)
+                    if (video.paused) {
+                        console.log("Retrying playback after load...");
+                        video.load();
+                        video.play().catch(e => console.error("Retry failed:", e));
+                    }
+                });
+            }
+        };
+
+        // Verificação de Estado de Rede (Se estiver 'No Source' ou 'Empty', força load)
+        if (video.networkState === video.NETWORK_NO_SOURCE || video.networkState === video.NETWORK_EMPTY) {
+            video.load();
         }
+
+        playVideo();
     };
 
     const togglePlay = () => {
@@ -303,7 +330,7 @@ const Results = () => {
                     {/* Overlay */}
                     {!isAudioEnabled && (
                         <div
-                            onClick={handleEnableAudio}
+                            onClick={(e) => handleEnableAudio(e)}
                             style={{
                                 position: 'absolute',
                                 top: 0,
