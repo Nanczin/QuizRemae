@@ -16,7 +16,7 @@ const Results = () => {
 
     const playerRef = useRef(null);
     // Encoder URL para evitar erros com espaços
-    const VIDEO_URL = "/vsl quiz.mp4";
+    const VIDEO_URL = "/vsl-quiz.mp4";
 
     // Initialize HTML5 Video Logic
     useEffect(() => {
