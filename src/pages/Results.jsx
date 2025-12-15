@@ -228,29 +228,7 @@ const Results = () => {
                         cursor: 'pointer'
                     }}>
 
-                    {/* Interaction Layer - Always active to prevent direct YT interaction */}
-                    {/* Interaction Layer - Always active to prevent direct YT interaction */}
-                    <div
-                        onClick={() => {
-                            if (!isAudioEnabled) {
-                                handleEnableAudio();
-                            } else {
-                                togglePlay();
-                            }
-                        }}
-                        style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: '100%',
-                            zIndex: 20,
-                            cursor: 'pointer',
-                            touchAction: 'manipulation',
-                            // Ensure it's tappable but transparent
-                            background: 'transparent'
-                        }}
-                    ></div>
+
 
                     <div id="vsl-player" style={{
                         position: 'absolute',
