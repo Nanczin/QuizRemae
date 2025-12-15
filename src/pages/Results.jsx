@@ -8,318 +8,191 @@ import { bgm } from '../utils/sounds';
 // ==========================================
 const VSL_CONFIG = {
     videoUrl: "/vsl-quiz.mp4",
-    // Tempo em segundos para liberar a oferta (Smart Delay).
-    // Coloque 0 para mostrar imediatamente.
-    // Exemplo: 10 * 60 (10 minutos)
     offerDelaySeconds: 0,
-    // Cor principal do player
     primaryColor: '#FB7C80'
 };
 
 // ==========================================
-// COMPONENT: VSL PLAYER (ROBUST & INSTAGRAM OPTIMIZED)
+// COMPONENT: VSL PLAYER (DEBUG & MVP VERSION)
 // ==========================================
 const VSLPlayer = ({ onProgress, onEnded }) => {
     const videoRef = useRef(null);
-    const containerRef = useRef(null);
+    const [debugLogs, setDebugLogs] = useState([]);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [isMuted, setIsMuted] = useState(true);
-    const [showControls, setShowControls] = useState(false);
-    const [hasInteracted, setHasInteracted] = useState(false);
-    const [duration, setDuration] = useState(0);
-    const controlsTimeoutRef = useRef(null);
+    const [needsInteraction, setNeedsInteraction] = useState(true);
 
-    // Inicialização segura para Autoplay
+    const log = (msg) => {
+        setDebugLogs(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString().split(' ')[0]}: ${msg}`]);
+        console.log(`[VSL DEBUG]: ${msg}`);
+    };
+
+    // 1. Setup inicial
     useEffect(() => {
-        bgm.stop();
+        bgm.stop(); // Garante q a música de fundo pare
         const video = videoRef.current;
         if (!video) return;
 
-        // Configuração inicial crítica
-        video.muted = true;
+        // Force configs
+        video.muted = true; // Obrigatório para autoplay
         video.playsInline = true;
         video.setAttribute('playsinline', 'true');
         video.setAttribute('webkit-playsinline', 'true');
-        video.setAttribute('x5-video-player-type', 'h5-page'); // Android WeChat/Some Browsers fallback
 
-        // Tentar Autoplay Silencioso
-        const startAutoplay = async () => {
-            try {
-                await video.play();
-                setIsPlaying(true);
-            } catch (err) {
-                console.log("Autoplay silencioso bloqueado, aguardando interação:", err);
-                setIsPlaying(false);
-            }
-        };
+        // Android WeChat/Some Browsers fallback
+        video.setAttribute('x5-video-player-type', 'h5-page');
+        video.setAttribute('x5-video-player-fullscreen', 'true');
 
-        startAutoplay();
+        // Debug Events
+        const events = ['loadstart', 'loadedmetadata', 'canplay', 'playing', 'pause', 'error', 'stalled', 'suspend'];
+        events.forEach(evt => {
+            video.addEventListener(evt, () => {
+                // log(`Evt: ${evt} | Ready: ${video.readyState}`);
+                if (evt === 'error') log(`Error: ${video.error ? video.error.message || video.error.code : 'unknown'}`);
+                if (evt === 'playing') setIsPlaying(true);
+                if (evt === 'pause') setIsPlaying(false);
+            });
+        });
 
-        // Limpeza
-        return () => {
-            // Stop video on unmount if needed
-        };
+        // Tentativa de Autoplay imediato (Muted)
+        log('Attempting Autoplay Muted...');
+        video.play().then(() => {
+            log('Autoplay Success (Muted)');
+            setIsPlaying(true);
+        }).catch(e => {
+            log('Autoplay Blocked: ' + e.message);
+            setIsPlaying(false);
+        });
+
     }, []);
 
-    // Gerenciador de Tempo e Progresso
-    const handleTimeUpdate = () => {
-        const video = videoRef.current;
-        if (!video) return;
-
-        const current = video.currentTime;
-        const total = video.duration || 1;
-        const p = (current / total) * 100;
-
-        setProgress(p);
-        setDuration(total);
-        if (onProgress) onProgress(current);
-    };
-
-    // Primeira Interação (Unmute & Reset)
-    const handleInitialInteraction = async (e) => {
-        // NÃO usar preventDefault() pois alguns browsers móveis bloqueiam a ação de mídia
-        if (e && e.stopPropagation) {
-            e.stopPropagation();
-        }
+    // 2. Interação do Usuário (O segredo do Unlock)
+    const handleUnlockAudio = async (e) => {
+        // Prevenir comportamento padrão apenas se necessário
+        if (e && e.stopPropagation) e.stopPropagation();
 
         const video = videoRef.current;
         if (!video) return;
+
+        log('User Tapped -> Unlock Sequence');
 
         try {
-            // 1. Habilitar som
             video.muted = false;
-            video.volume = 1.0;
+            video.currentTime = 0; // Reinicia para garantir sync
 
-            // 2. Reiniciar vídeo para experiência completa
-            video.currentTime = 0;
-
-            // 3. Tentar Play direto
+            // Promise explícita
             await video.play();
 
-            // 4. Se sucesso, atualizar estados
+            log('Play with Audio Success');
+            setNeedsInteraction(false);
             setIsPlaying(true);
-            setIsMuted(false);
-            setHasInteracted(true);
-            showControlsBriefly();
-
         } catch (err) {
-            console.error("Erro ao dar play (tentativa 1):", err);
+            log('Unlock Failed: ' + err.message);
 
-            // Fallback: Tentar carregar novamente e tocar (necessário em alguns WebViews)
-            try {
-                // Pequeno delay para garantir que a UI respondeu
-                await new Promise(resolve => setTimeout(resolve, 50));
-
-                video.load();
-                video.currentTime = 0;
-                await video.play();
-
-                setIsPlaying(true);
-                setIsMuted(false);
-                setHasInteracted(true);
-            } catch (err2) {
-                console.error("Erro fatal no play:", err2);
-                // Se tudo falhar, mostramos um alerta discreto ou apenas deixamos o estado como estava
-                // Opcional: setHasInteracted(true) para liberar os controles manuais
-                setHasInteracted(true);
-                setIsPlaying(false);
-            }
+            // Fallback nuclear: Load + Play
+            log('Trying Fallback: Load+Play');
+            video.load();
+            video.oncanplay = () => {
+                video.muted = false;
+                video.play()
+                    .then(() => {
+                        log('Fallback Success');
+                        setNeedsInteraction(false);
+                        setIsPlaying(true);
+                    })
+                    .catch(e2 => log('Fallback Error: ' + e2.message));
+            };
         }
     };
 
-    // Controle de Play/Pause subsequente
-    const togglePlay = async (e) => {
-        // Garantir que o evento não suba para o container se vier do botão
-        if (e && e.stopPropagation) {
-            e.stopPropagation();
-        }
+    // 3. Toggle Play simplificado
+    const togglePlay = (e) => {
+        if (e && e.stopPropagation) e.stopPropagation();
 
         const video = videoRef.current;
         if (!video) return;
 
-        try {
-            if (video.paused || video.ended) {
-                await video.play();
-                setIsPlaying(true);
-                showControlsBriefly();
-            } else {
-                video.pause();
-                setIsPlaying(false);
-                setShowControls(true); // Mantém controles visíveis ao pausar
-            }
-        } catch (err) {
-            console.error("Erro no toggle:", err);
-            // Se falhar o play, força update de estado
-            setIsPlaying(!video.paused);
+        if (video.paused) {
+            video.play().catch(e => log('Toggle Play Error: ' + e.message));
+        } else {
+            video.pause();
         }
     };
 
-    const handleContainerClick = (e) => {
-        // Se ainda não interagiu, tenta o unmute/play inicial
-        if (!hasInteracted) {
-            handleInitialInteraction(e);
-        } else {
-            // Se já interagiu, apenas alterna play/pause
-            togglePlay(e);
+    const handleTimeUpdate = () => {
+        const video = videoRef.current;
+        if (video && onProgress) {
+            onProgress(video.currentTime);
         }
     };
 
     return (
         <div
-            ref={containerRef}
             className="vsl-container"
-            style={{
-                position: 'relative',
-                width: '100%',
-                paddingBottom: '56.25%', // 16:9 Aspect Ratio
-                backgroundColor: '#000',
-                borderRadius: '16px',
-                overflow: 'hidden',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-                cursor: 'pointer',
-                touchAction: 'manipulation', // Melhora resposta ao toque
-                transform: 'translateZ(0)' // Força aceleração de hardware
-            }}
-            onClick={handleContainerClick}
+            style={{ position: 'relative', paddingBottom: '56.25%', background: '#000', borderRadius: '16px', overflow: 'hidden' }}
+            onClick={(e) => needsInteraction ? handleUnlockAudio(e) : togglePlay(e)}
         >
             <video
                 ref={videoRef}
                 src={VSL_CONFIG.videoUrl}
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain', // Garante que todo o vídeo apareça (sem cortes)
-                    display: 'block'
-                }}
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'contain' }}
                 playsInline
                 webkit-playsinline="true"
-                controls={false} // IMPORTANTE: Desativar controles nativos
-                preload="metadata"
                 disablePictureInPicture
-                controlsList="nodownload noremoteplayback noplaybackrate"
+                muted // Começa mudo
+                autoPlay // Tenta autoplay
+                loop={false}
+                preload="auto"
                 onTimeUpdate={handleTimeUpdate}
                 onEnded={() => {
                     setIsPlaying(false);
                     if (onEnded) onEnded();
                 }}
-                onWaiting={() => console.log("Buffering...")}
-                onPlaying={() => setIsPlaying(true)}
-                muted
-                autoPlay
             />
 
-            {/* OVERLAY INICIAL (TAP TO UNMUTE) */}
-            {!hasInteracted && (
-                <div
-                    style={{
-                        position: 'absolute',
-                        top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 20,
-                        background: 'rgba(0,0,0,0.3)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexDirection: 'column'
-                    }}
-                >
+            {/* OVERLAY DE DESBLOQUEIO (CLIQUE ÚNICO) */}
+            {needsInteraction && (
+                <div style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 20, background: 'rgba(0,0,0,0.1)', // Levemente escurecido
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center'
+                }}>
                     <div className="pulse-animation" style={{
-                        background: 'rgba(239, 68, 68, 0.95)', // Vermelho chamativo
-                        padding: '16px 24px',
-                        borderRadius: '12px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.5)',
-                        backdropFilter: 'blur(4px)',
-                        border: '2px solid rgba(255,255,255,0.3)'
+                        background: '#EF4444', color: 'white', padding: '16px 24px', borderRadius: '50px',
+                        fontSize: '1.2rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '10px',
+                        boxShadow: '0 4px 15px rgba(239, 68, 68, 0.5)',
+                        pointerEvents: 'none' // Clica através dele para o container
                     }}>
-                        <VolumeX size={32} color="white" />
-                        <div style={{ display: 'flex', flexDirection: 'column' }}>
-                            <span style={{ color: 'white', fontWeight: '800', fontSize: '1.1rem', textTransform: 'uppercase' }}>
-                                TOQUE PARA OUVIR
-                            </span>
-                            <span style={{ color: 'rgba(255,255,255,0.9)', fontSize: '0.85rem' }}>
-                                O vídeo já começou
-                            </span>
-                        </div>
+                        <VolumeX size={24} />
+                        TOQUE PARA OUVIR
                     </div>
                 </div>
             )}
 
-            {/* BARRA DE CONTROLES CUSTOMIZADA */}
+            {/* DEBUGGER VISUAL (SOLUÇÃO P/ WEBVIEW - REMOVA EM PRODUÇÃO SE QUISER) */}
             <div style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
-                padding: '20px 16px 16px',
-                background: 'linear-gradient(to top, rgba(0,0,0,0.9) 0%, transparent 100%)',
-                display: 'flex',
-                gap: '12px',
-                alignItems: 'center',
-                opacity: (showControls || !isPlaying) && hasInteracted ? 1 : 0,
-                transition: 'opacity 0.3s ease',
-                pointerEvents: (showControls || !isPlaying) && hasInteracted ? 'auto' : 'none'
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                background: 'rgba(0,0,0,0.7)', color: '#0F0',
+                fontSize: '10px', fontFamily: 'monospace', padding: '4px 8px',
+                pointerEvents: 'none', zIndex: 30, opacity: 0.9, textAlign: 'left'
             }}>
-                <button
-                    onClick={(e) => togglePlay(e)}
-                    style={{
-                        background: 'transparent',
-                        border: 'none',
-                        color: 'white',
-                        padding: '4px',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center'
-                    }}
-                >
-                    {isPlaying ? <Pause size={28} fill="white" /> : <Play size={28} fill="white" />}
-                </button>
-
-                {/* Progress Bar Container */}
-                <div style={{
-                    flex: 1,
-                    height: '8px',
-                    background: 'rgba(255,255,255,0.3)',
-                    borderRadius: '4px',
-                    position: 'relative',
-                    overflow: 'hidden'
-                }}>
-                    {/* Progress Fill */}
-                    <div style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        bottom: 0,
-                        width: `${progress}%`,
-                        background: VSL_CONFIG.primaryColor,
-                        borderRadius: '4px',
-                        transition: 'width 0.1s linear'
-                    }}>
-                        {/* Glow effect at tip */}
-                        <div style={{
-                            position: 'absolute',
-                            right: 0,
-                            top: '50%',
-                            transform: 'translate(50%, -50%)',
-                            width: '12px',
-                            height: '12px',
-                            background: VSL_CONFIG.primaryColor,
-                            borderRadius: '50%',
-                            boxShadow: `0 0 10px ${VSL_CONFIG.primaryColor}`
-                        }} />
-                    </div>
-                </div>
-
-                {/* Duration / Vol indicator (Optional) */}
-                <div onClick={(e) => { e.stopPropagation(); }} style={{ color: 'white', fontSize: '0.8rem', opacity: 0.8 }}>
-                    {!isMuted ? <Volume2 size={20} /> : <VolumeX size={20} />}
-                </div>
+                DEBUG:
+                {debugLogs.map((l, i) => <span key={i} style={{ display: 'block' }}>{l}</span>)}
             </div>
+
+            {/* CONTROLES SIMPLIFICADOS (APÓS UNLOCK) */}
+            {!needsInteraction && (
+                <div style={{
+                    position: 'absolute', bottom: '30px', left: '16px',
+                    zIndex: 25, pointerEvents: 'none'
+                }}>
+                    {/* Ícone de estado apenas */}
+                    {!isPlaying && <div style={{
+                        background: 'rgba(0,0,0,0.5)', padding: '12px', borderRadius: '50%'
+                    }}>
+                        <Play size={32} fill="white" color="white" />
+                    </div>}
+                </div>
+            )}
         </div>
     );
 };
