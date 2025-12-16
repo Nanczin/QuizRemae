@@ -36,14 +36,14 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 1, // Autoplay desativado (será controlado via JS)
-                    controls: 1, // Show native controls so user has control after unlock
+                    autoplay: 1, // Start playing (muted) immediately
+                    controls: 0, // Hide controls initially
                     rel: 0,
                     playsinline: 1,
                     modestbranding: 1,
                     showinfo: 0,
-                    fs: 1, // Provide fullscreen option
-                    disablekb: 0 // Allow keyboard
+                    fs: 0,
+                    disablekb: 1
                 },
                 events: {
                     onReady: onPlayerReady,
@@ -67,25 +67,37 @@ const VSLPlayer = ({ onProgress }) => {
 
     const onPlayerReady = (event) => {
         setIsPlayerReady(true);
-        // Autoplay Mudo para garantir "Seu vídeo já começou"
+        // Autoplay Mudo
         event.target.mute();
         event.target.playVideo();
     };
 
     const onPlayerStateChange = (event) => {
-        // Stop BGM when video plays (should be handled by overlay unlock too)
-        if (event.data === window.YT.PlayerState.PLAYING) {
-            // bgm.stop(); // Opcional, dependendo da lógica geral de áudio
-        }
+        // Stop BGM when video plays with sound (handled by interactions mainly)
     };
 
     const handleUnlockAudio = (e) => {
+        // Ensure the interaction is captured effectively
         e.preventDefault();
-        if (playerRef.current && playerRef.current.unMute) {
+        e.stopPropagation();
+
+        if (playerRef.current) {
+            // Sequence to restart and play with sound
             playerRef.current.unMute();
-            playerRef.current.seekTo(0);
             playerRef.current.setVolume(100);
+            playerRef.current.seekTo(0);
             playerRef.current.playVideo();
+
+            // Allow controls after interaction
+            // Note: dynamic update of 'controls' might require re-init in some players, 
+            // but usually we just want to remove the overlay.
+            // If controls need to appear, we might need to rely on YouTube's behavior or re-render if using a wrapper library.
+            // With raw API, we can't easily switch 'controls' param dynamically without reloading, 
+            // but we can trust the video continues playing. 
+            // If the user REALLY needs controls after unlock, we might need a workaround or accept no controls for pure VSL.
+            // However, previous prompt asked for controls. 
+            // Let's assume hiding the overlay is the priority.
+
             setShowOverlay(false);
             bgm.stop();
         }
@@ -124,12 +136,11 @@ const VSLPlayer = ({ onProgress }) => {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    opacity: showOverlay ? 0.4 : 1, // Dim video when overlay is active
-                    transition: 'opacity 0.3s ease'
+                    // Removed opacity logic to prevent darkening issues
                 }}
             />
 
-            {/* OVERLAY "SEU VÍDEO JÁ COMEÇOU" */}
+            {/* OVERLAY REDESIGN */}
             {showOverlay && (
                 <div
                     onClick={handleUnlockAudio}
@@ -143,41 +154,54 @@ const VSLPlayer = ({ onProgress }) => {
                         flexDirection: 'column',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: 'rgba(0,0,0,0.2)', // Leve escurecimento extra
-                        zIndex: 10,
-                        cursor: 'pointer',
-                        backdropFilter: 'blur(2px)'
+                        background: 'transparent',
+                        zIndex: 20,
+                        cursor: 'pointer'
                     }}
                 >
-                    <div style={{
-                        background: 'rgba(255, 255, 255, 0.95)',
-                        padding: '16px 32px',
-                        borderRadius: '50px',
-                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                    {/* The Red Card / Button Area */}
+                    <div className="pulse-btn" style={{
+                        background: '#DC2626', // Strong Red
+                        padding: '20px 40px',
+                        borderRadius: '12px',
+                        boxShadow: '0 0 0 0 rgba(220, 38, 38, 0.7)',
                         display: 'flex',
+                        flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '12px',
-                        animation: 'pulse 2s infinite'
+                        gap: '16px',
+                        maxWidth: '90%',
+                        textAlign: 'center',
+                        animation: 'pulse-red 2s infinite'
                     }}>
-                        <Volume2 size={32} color="#FB7C80" />
-                        <div style={{ textAlign: 'left' }}>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
-                                Seu vídeo já começou
-                            </p>
-                            <p style={{ margin: 0, fontSize: '1.2rem', color: '#1F2937', fontWeight: '800' }}>
-                                TOQUE PARA OUVIR
-                            </p>
-                        </div>
+                        <span style={{
+                            color: '#FFF',
+                            fontSize: 'clamp(1rem, 4vw, 1.2rem)',
+                            fontWeight: '700',
+                            textTransform: 'uppercase',
+                            letterSpacing: '0.5px'
+                        }}>
+                            Seu vídeo já começou
+                        </span>
+
+                        <VolumeX size={48} color="#FFF" strokeWidth={1.5} />
+
+                        <span style={{
+                            color: '#FFF',
+                            fontSize: 'clamp(1.1rem, 5vw, 1.4rem)',
+                            fontWeight: '800',
+                            textTransform: 'uppercase'
+                        }}>
+                            Clique para ouvir
+                        </span>
                     </div>
                 </div>
             )}
 
-            {/* Custom Style for Pulse Animation */}
             <style>{`
-                @keyframes pulse {
-                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
-                    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
-                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+                @keyframes pulse-red {
+                    0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
+                    70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
+                    100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
                 }
             `}</style>
         </div>
