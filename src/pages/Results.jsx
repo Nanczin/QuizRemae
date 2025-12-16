@@ -92,15 +92,22 @@ const VSLPlayer = ({ onProgress }) => {
     const handleUnlockAudio = (e) => {
         if (e) {
             e.stopPropagation();
-            if (e.cancelable) e.preventDefault();
+            // REMOVIDO e.preventDefault() -> Isso permite que o navegador detecte o festo do usuário corretamente no Android/iOS
         }
 
         if (playerRef.current) {
-            // Sequência de Desbloqueio e Reinício
+            // Sequência ULTRA-SEGURA:
+            // 1. Unmute e Volume
             playerRef.current.unMute();
             playerRef.current.setVolume(100);
-            playerRef.current.seekTo(0);
+
+            // 2. Play PRIMEIRO (Para garantir o inicio da reprodução com o "user gesture")
             playerRef.current.playVideo();
+
+            // 3. Seek DEPOIS (Assim o vídeo já está "ativo" e apenas pula pro inicio)
+            // Isso evita que o seek cancele o play ou congele o player
+            playerRef.current.seekTo(0);
+
             setNeedsInteraction(false);
         }
     };
