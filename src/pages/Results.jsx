@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ShieldCheck, Play, Pause, VolumeX } from 'lucide-react';
+import { Check, ShieldCheck, Play, Pause, VolumeX, Volume2 } from 'lucide-react';
 import { bgm } from '../utils/sounds';
 
 // ==========================================
@@ -9,7 +9,7 @@ import { bgm } from '../utils/sounds';
 const VSL_CONFIG = {
     // ID do vídeo do YouTube (Mantido para referência, mas usando Local)
     videoId: "xeTISviozS4",
-    offerDelaySeconds: 0,
+    offerDelaySeconds: 0, // Offer appears immediately for testing/default
     primaryColor: '#FB7C80'
 };
 
@@ -19,6 +19,7 @@ const VSL_CONFIG = {
 const VSLPlayer = ({ onProgress }) => {
     const playerRef = useRef(null);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
+    const [showOverlay, setShowOverlay] = useState(true);
 
     useEffect(() => {
         // Load YouTube IFrame Player API code asynchronously
@@ -35,13 +36,14 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 0, // User clicks to play (Native behavior)
-                    controls: 1, // Show native controls
+                    autoplay: 1, // Autoplay desativado (será controlado via JS)
+                    controls: 1, // Show native controls so user has control after unlock
                     rel: 0,
                     playsinline: 1,
                     modestbranding: 1,
                     showinfo: 0,
-                    fs: 1
+                    fs: 1, // Provide fullscreen option
+                    disablekb: 0 // Allow keyboard
                 },
                 events: {
                     onReady: onPlayerReady,
@@ -65,11 +67,26 @@ const VSLPlayer = ({ onProgress }) => {
 
     const onPlayerReady = (event) => {
         setIsPlayerReady(true);
+        // Autoplay Mudo para garantir "Seu vídeo já começou"
+        event.target.mute();
+        event.target.playVideo();
     };
 
     const onPlayerStateChange = (event) => {
-        // Stop BGM when video plays
+        // Stop BGM when video plays (should be handled by overlay unlock too)
         if (event.data === window.YT.PlayerState.PLAYING) {
+            // bgm.stop(); // Opcional, dependendo da lógica geral de áudio
+        }
+    };
+
+    const handleUnlockAudio = (e) => {
+        e.preventDefault();
+        if (playerRef.current && playerRef.current.unMute) {
+            playerRef.current.unMute();
+            playerRef.current.seekTo(0);
+            playerRef.current.setVolume(100);
+            playerRef.current.playVideo();
+            setShowOverlay(false);
             bgm.stop();
         }
     };
@@ -106,9 +123,63 @@ const VSLPlayer = ({ onProgress }) => {
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: '100%'
+                    height: '100%',
+                    opacity: showOverlay ? 0.4 : 1, // Dim video when overlay is active
+                    transition: 'opacity 0.3s ease'
                 }}
             />
+
+            {/* OVERLAY "SEU VÍDEO JÁ COMEÇOU" */}
+            {showOverlay && (
+                <div
+                    onClick={handleUnlockAudio}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        background: 'rgba(0,0,0,0.2)', // Leve escurecimento extra
+                        zIndex: 10,
+                        cursor: 'pointer',
+                        backdropFilter: 'blur(2px)'
+                    }}
+                >
+                    <div style={{
+                        background: 'rgba(255, 255, 255, 0.95)',
+                        padding: '16px 32px',
+                        borderRadius: '50px',
+                        boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        animation: 'pulse 2s infinite'
+                    }}>
+                        <Volume2 size={32} color="#FB7C80" />
+                        <div style={{ textAlign: 'left' }}>
+                            <p style={{ margin: 0, fontSize: '0.8rem', color: '#6B7280', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                                Seu vídeo já começou
+                            </p>
+                            <p style={{ margin: 0, fontSize: '1.2rem', color: '#1F2937', fontWeight: '800' }}>
+                                TOQUE PARA OUVIR
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Style for Pulse Animation */}
+            <style>{`
+                @keyframes pulse {
+                    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+                    70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(255, 255, 255, 0); }
+                    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
+                }
+            `}</style>
         </div>
     );
 };
