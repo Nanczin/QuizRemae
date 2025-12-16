@@ -38,13 +38,13 @@ const VSLPlayer = ({ onProgress }) => {
                 playerVars: {
                     autoplay: 1,      // Tenta Autoplay
                     mute: 1,          // CRÍTICO: Garante que o autoplay funcione na maioria dos browsers
-                    controls: 0,
+                    controls: 1,      // Enables user interaction (pause, volume, seek)
                     rel: 0,
                     playsinline: 1,
                     modestbranding: 1,
                     showinfo: 0,
-                    fs: 0,
-                    disablekb: 1,
+                    fs: 1,            // Allow fullscreen
+                    disablekb: 0,     // Enable keyboard controls
                     iv_load_policy: 3,
                     origin: window.location.origin
                 },
@@ -157,17 +157,17 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%'
             }}
         >
-            <div
-                id="youtube-player"
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    pointerEvents: showOverlay ? 'none' : 'auto' // Impede interação com o player se o overlay estiver ativo (evita pause acidental)
-                }}
-            />
+            {/* Wrapper for Pointer Events stability */}
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '100%',
+                pointerEvents: showOverlay ? 'none' : 'auto'
+            }}>
+                <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
+            </div>
 
             {/* OVERLAY RESPONSIVO */}
             {showOverlay && (
