@@ -84,7 +84,6 @@ const VSLPlayer = ({ onProgress }) => {
     const onPlayerStateChange = (event) => {
         if (event.data === window.YT.PlayerState.PLAYING) {
             setIsPlaying(true);
-            setNeedsInteraction(false); // Hide overlay ONLY when video actually starts playing
         } else if (event.data === window.YT.PlayerState.PAUSED) {
             setIsPlaying(false);
         }
@@ -101,7 +100,7 @@ const VSLPlayer = ({ onProgress }) => {
             playerRef.current.setVolume(100);
             playerRef.current.seekTo(0);
             playerRef.current.playVideo();
-            // setNeedsInteraction(false) REMOVIDO: Será tratado no onPlayerStateChange
+            setNeedsInteraction(false);
         }
     };
 
