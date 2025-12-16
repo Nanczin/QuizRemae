@@ -2,7 +2,6 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, ShieldCheck, Play, Pause, VolumeX } from 'lucide-react';
 import { bgm } from '../utils/sounds';
-import VSLVideo from '../assets/vsl-quiz.mp4';
 
 // ==========================================
 // CONFIGURAÇÕES DA VSL (YOUTUBE - API MODE)
@@ -15,183 +14,104 @@ const VSL_CONFIG = {
 };
 
 // ==========================================
-// COMPONENT: NATIVE VIDEO PLAYER (LOCAL FILE)
+// COMPONENT: YOUTUBE VIDEO PLAYER (NATIVE API)
 // ==========================================
 const VSLPlayer = ({ onProgress }) => {
-    const videoRef = useRef(null);
-    const [needsInteraction, setNeedsInteraction] = useState(true);
-    const [hasError, setHasError] = useState(false);
+    const playerRef = useRef(null);
+    const [isPlayerReady, setIsPlayerReady] = useState(false);
 
     useEffect(() => {
-        console.log("DEBUG: VSLPlayer Mounted");
-        return () => console.log("DEBUG: VSLPlayer Unmounted");
-    }, []);
-
-    // Track progress & Debug Events
-    useEffect(() => {
-        const video = videoRef.current;
-        if (!video) {
-            console.log("DEBUG: videoRef is null");
-            return;
+        // Load YouTube IFrame Player API code asynchronously
+        if (!window.YT) {
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            const firstScriptTag = document.getElementsByTagName('script')[0];
+            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         }
 
-        console.log("DEBUG: videoRef found, attaching listeners. Src:", video.currentSrc || video.src);
-
-        const updateTime = () => {
-            if (onProgress) onProgress(video.currentTime);
+        const onYouTubeIframeAPIReady = () => {
+            playerRef.current = new window.YT.Player('youtube-player', {
+                videoId: VSL_CONFIG.videoId,
+                width: '100%',
+                height: '100%',
+                playerVars: {
+                    autoplay: 0, // User clicks to play (Native behavior)
+                    controls: 1, // Show native controls
+                    rel: 0,
+                    playsinline: 1,
+                    modestbranding: 1,
+                    showinfo: 0,
+                    fs: 1
+                },
+                events: {
+                    onReady: onPlayerReady,
+                    onStateChange: onPlayerStateChange
+                }
+            });
         };
 
-        const logEvent = (name) => console.log(`DEBUG: Video Event - ${name}`);
-
-        const onPlay = () => logEvent('play');
-        const onPause = () => logEvent('pause');
-        const onCanPlay = () => logEvent('canplay');
-        const onLoadedMetadata = () => {
-            logEvent('loadedmetadata');
-            console.log("DEBUG: Video Duration:", video.duration);
-        };
-        const onWaiting = () => logEvent('waiting');
-        const onStalled = () => logEvent('stalled');
-
-        video.addEventListener('timeupdate', updateTime);
-        video.addEventListener('play', onPlay);
-        video.addEventListener('pause', onPause);
-        video.addEventListener('canplay', onCanPlay);
-        video.addEventListener('loadedmetadata', onLoadedMetadata);
-        video.addEventListener('waiting', onWaiting);
-        video.addEventListener('stalled', onStalled);
+        if (window.YT && window.YT.Player) {
+            onYouTubeIframeAPIReady();
+        } else {
+            window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+        }
 
         return () => {
-            video.removeEventListener('timeupdate', updateTime);
-            video.removeEventListener('play', onPlay);
-            video.removeEventListener('pause', onPause);
-            video.removeEventListener('canplay', onCanPlay);
-            video.removeEventListener('loadedmetadata', onLoadedMetadata);
-            video.removeEventListener('waiting', onWaiting);
-            video.removeEventListener('stalled', onStalled);
+            if (playerRef.current && playerRef.current.destroy) {
+                playerRef.current.destroy();
+            }
         };
-    }, [onProgress]);
-
-    useEffect(() => {
-        bgm.stop();
-        console.log("DEBUG: bgm.stop() called");
     }, []);
 
-    const handleUnlockAudio = (e) => {
-        console.log("DEBUG: handleUnlockAudio clicked");
-        if (e) e.stopPropagation();
-        if (videoRef.current) {
-            console.log("DEBUG: Unmuting and restarting video...");
-            videoRef.current.currentTime = 0;
-            videoRef.current.muted = false;
-            videoRef.current.volume = 1.0;
-            videoRef.current.play()
-                .then(() => console.log("DEBUG: Play promise fulfilled"))
-                .catch(err => console.error("DEBUG: Play promise failed", err));
-            setNeedsInteraction(false);
+    const onPlayerReady = (event) => {
+        setIsPlayerReady(true);
+    };
+
+    const onPlayerStateChange = (event) => {
+        // Stop BGM when video plays
+        if (event.data === window.YT.PlayerState.PLAYING) {
+            bgm.stop();
         }
     };
+
+    // Track progress for offer delay
+    useEffect(() => {
+        const interval = setInterval(() => {
+            if (playerRef.current && playerRef.current.getCurrentTime) {
+                const time = playerRef.current.getCurrentTime();
+                if (onProgress) onProgress(time);
+            }
+        }, 1000);
+        return () => clearInterval(interval);
+    }, [onProgress, isPlayerReady]);
 
     return (
         <div
             className="vsl-container"
             style={{
                 position: 'relative',
+                paddingBottom: '56.25%', // 16:9 Aspect Ratio
+                height: 0,
                 borderRadius: '16px',
                 overflow: 'hidden',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
                 background: '#000',
-                width: '100%',
-                lineHeight: 0
+                width: '100%'
             }}
         >
-            {!hasError ? (
-                <video
-                    ref={videoRef}
-                    src={VSLVideo}
-                    muted
-                    autoPlay
-                    playsInline
-                    loop
-                    controls={!needsInteraction}
-                    controlsList="nodownload"
-                    onLoadStart={() => console.log("DEBUG: Video onLoadStart")}
-                    onError={(e) => {
-                        console.error("DEBUG: Video onError", e.nativeEvent);
-                        setHasError(true);
-                    }}
-                    style={{
-                        width: '100%',
-                        height: 'auto',
-                        display: 'block',
-                        transform: 'scale(1.1)'
-                    }}
-                >
-                    Seu navegador não suporta a tag de vídeo.
-                </video>
-            ) : (
-                <div style={{
+            <div
+                id="youtube-player"
+                style={{
                     position: 'absolute',
                     top: 0,
                     left: 0,
                     width: '100%',
-                    height: '100%',
-                    padding: '20px',
-                    textAlign: 'center',
-                    color: '#EF4444',
-                    background: '#000',
-                    zIndex: 10,
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center'
-                }}>
-                    <p style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1.2rem' }}>Erro ao carregar o vídeo</p>
-                    <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Não foi possível reproduzir o arquivo.</p>
-                    <p style={{ fontSize: '0.8rem', marginTop: '8px', opacity: 0.7 }}>Tente recarregar a página.</p>
-                </div>
-            )}
-
-            {/* 1. OVERLAY DE BLOQUEIO */}
-            {needsInteraction && !hasError && (
-                <div
-                    onClick={handleUnlockAudio}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 20,
-                        background: 'rgba(0,0,0,0.1)',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer',
-                        touchAction: 'manipulation'
-                    }}
-                >
-                    <div className="pulse-animation" style={{
-                        background: '#EF4444',
-                        color: 'white',
-                        padding: '20px 32px',
-                        borderRadius: '12px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
-                        border: '2px solid white',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                        textAlign: 'center',
-                        minWidth: '220px',
-                        pointerEvents: 'none'
-                    }}>
-                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
-                        <div style={{ position: 'relative' }}>
-                            <Play size={48} fill="white" color="white" />
-                        </div>
-                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
-                    </div>
-                </div>
-            )}
-        </div>
-        <div style={{ color: '#666', fontSize: '10px', textAlign: 'center', marginTop: '4px', fontFamily: 'monospace' }}>
-             DEBUG: Interact={needsInteraction.toString()} | Err={hasError.toString()} | SrcLoaded={VSLVideo ? 'Yes' : 'No'}
+                    height: '100%'
+                }}
+            />
         </div>
     );
 };
-
 
 const Results = () => {
     const [showOffer, setShowOffer] = useState(VSL_CONFIG.offerDelaySeconds === 0);
