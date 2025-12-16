@@ -163,7 +163,10 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 zIndex: 0,
-                pointerEvents: showOverlay ? 'none' : 'auto'
+                pointerEvents: showOverlay ? 'none' : 'auto',
+                // ZOOM HACK: Scale video to push YouTube Share/Title buttons out of the visible area
+                transform: 'scale(1.35)',
+                transformOrigin: 'center center'
             }}>
                 <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
             </div>
