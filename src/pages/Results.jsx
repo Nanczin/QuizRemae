@@ -20,6 +20,7 @@ const VSLPlayer = ({ onProgress }) => {
     const playerRef = useRef(null);
     const [needsInteraction, setNeedsInteraction] = useState(true);
     const [isPlaying, setIsPlaying] = useState(true);
+    const [isPlayerReady, setIsPlayerReady] = useState(false);
 
     // Inicialização da API do YouTube
     useEffect(() => {
@@ -74,10 +75,11 @@ const VSLPlayer = ({ onProgress }) => {
     const onPlayerReady = (event) => {
         event.target.mute();
         event.target.playVideo();
+        setIsPlayerReady(true);
     };
 
     const onPlayerStateChange = (event) => {
-        if (event.data === window.YT.PlayerState.PLAYING) {
+        if (event.data === window.YT.PlayerState.PLAYING || event.data === window.YT.PlayerState.BUFFERING) {
             setIsPlaying(true);
         } else if (event.data === window.YT.PlayerState.PAUSED) {
             setIsPlaying(false);
@@ -86,10 +88,15 @@ const VSLPlayer = ({ onProgress }) => {
 
     // --- INTERAÇÕES ---
 
-    const handleUnlockAudio = () => {
+    const handleUnlockAudio = (e) => {
+        if (e) {
+            e.stopPropagation();
+        }
+
         if (playerRef.current && playerRef.current.unMute) {
             playerRef.current.unMute();
-            // playerRef.current.seekTo(0); // REMOVIDO: Evita travamento/buffering no mobile
+            playerRef.current.setVolume(100);
+            playerRef.current.seekTo(0);
             playerRef.current.playVideo();
             setNeedsInteraction(false);
             setIsPlaying(true); // Força estado visual
@@ -147,7 +154,7 @@ const VSLPlayer = ({ onProgress }) => {
             />
 
             {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) - DESIGN NOVO */}
-            {needsInteraction && (
+            {needsInteraction && isPlayerReady && (
                 <div
                     onClick={handleUnlockAudio}
                     style={{
@@ -181,7 +188,7 @@ const VSLPlayer = ({ onProgress }) => {
             )}
 
             {/* 2. AREA INVISÍVEL PARA TOGGLE PLAY/PAUSE (PÓS-INTERAÇÃO) */}
-            {!needsInteraction && (
+            {!needsInteraction && isPlayerReady && (
                 <div
                     onClick={togglePlay}
                     style={{
@@ -193,7 +200,7 @@ const VSLPlayer = ({ onProgress }) => {
             )}
 
             {/* 3. ÍCONE DE PLAY GIGANTE (SE PAUSADO) - AGORA VERMELHO */}
-            {!needsInteraction && !isPlaying && (
+            {!needsInteraction && !isPlaying && isPlayerReady && (
                 <div style={{
                     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                     zIndex: 15, pointerEvents: 'none'
