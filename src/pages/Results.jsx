@@ -201,14 +201,18 @@ const VSLPlayer = ({ onProgress }) => {
 
             {/* 3. ÍCONE DE PLAY GIGANTE (SE PAUSADO) - AGORA VERMELHO */}
             {!needsInteraction && !isPlaying && isPlayerReady && (
-                <div style={{
-                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                    zIndex: 15, pointerEvents: 'none'
-                }}>
+                <div
+                    onClick={togglePlay}
+                    style={{
+                        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                        zIndex: 15, cursor: 'pointer'
+                    }}
+                >
                     <div style={{
                         background: 'rgba(239, 68, 68, 0.9)', borderRadius: '50%', padding: '24px',
                         backdropFilter: 'blur(4px)', border: '4px solid rgba(255,255,255,0.8)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}>
                         <Play size={48} fill="white" color="white" style={{ marginLeft: '4px' }} />
                     </div>
