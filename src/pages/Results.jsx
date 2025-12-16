@@ -163,7 +163,10 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 zIndex: 0,
-                pointerEvents: showOverlay ? 'none' : 'auto'
+                pointerEvents: showOverlay ? 'none' : 'auto',
+                // Micro-zoom to fix border leftovers (black bars)
+                transform: 'scale(1.05)',
+                transformOrigin: 'center center'
             }}>
                 <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
             </div>
@@ -260,6 +263,23 @@ const VSLPlayer = ({ onProgress }) => {
                             Clique para ouvir
                         </span>
                     </div>
+
+                    {/* Footer Warning Text */}
+                    <p style={{
+                        position: 'absolute',
+                        bottom: '5%',
+                        width: '100%',
+                        textAlign: 'center',
+                        color: '#FFF',
+                        fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
+                        fontWeight: '600',
+                        margin: 0,
+                        padding: '0 16px',
+                        pointerEvents: 'none',
+                        textShadow: '0 1px 3px rgba(0,0,0,0.8)'
+                    }}>
+                        Caso o vídeo não inicie automaticamente, clique no Play da tela.
+                    </p>
                 </div>
             )}
 
