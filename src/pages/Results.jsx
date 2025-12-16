@@ -20,6 +20,8 @@ const VSLPlayer = ({ onProgress }) => {
     const playerRef = useRef(null);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
     const [showOverlay, setShowOverlay] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [showControls, setShowControls] = useState(false);
 
     useEffect(() => {
         // Load YouTube IFrame Player API code asynchronously
@@ -38,13 +40,13 @@ const VSLPlayer = ({ onProgress }) => {
                 playerVars: {
                     autoplay: 1,      // Tenta Autoplay
                     mute: 1,          // CRÍTICO: Garante que o autoplay funcione na maioria dos browsers
-                    controls: 1,      // Enables user interaction (pause, volume, seek)
+                    controls: 0,      // HIDE Native Controls
                     rel: 0,
                     playsinline: 1,
                     modestbranding: 1,
                     showinfo: 0,
-                    fs: 1,            // Allow fullscreen
-                    disablekb: 0,     // Enable keyboard controls
+                    fs: 0,            // Disable fullscreen button
+                    disablekb: 1,     // Disable keyboard controls
                     iv_load_policy: 3,
                     origin: window.location.origin
                 },
@@ -76,8 +78,12 @@ const VSLPlayer = ({ onProgress }) => {
     };
 
     const onPlayerStateChange = (event) => {
+        // Update Playing State
+        const playing = event.data === window.YT.PlayerState.PLAYING;
+        setIsPlaying(playing);
+
         // Se estiver tocando E não estiver mudo, esconde o overlay
-        if (event.data === window.YT.PlayerState.PLAYING) {
+        if (playing) {
             const isMuted = event.target.isMuted();
             if (!isMuted) {
                 setShowOverlay(false);
@@ -94,31 +100,21 @@ const VSLPlayer = ({ onProgress }) => {
 
         if (playerRef.current && playerRef.current.playVideo) {
             try {
-                console.log("Overlay clicked: Unmuting and Restarting (Sequence Fixed)...");
+                console.log("Overlay clicked: Resetting...");
 
-                // 1. Unmute first
                 playerRef.current.unMute();
                 playerRef.current.setVolume(100);
-
-                // 2. Seek to start immediately
                 playerRef.current.seekTo(0, true);
-
-                // 3. Play video (must be part of the synchronous chain for mobile)
                 playerRef.current.playVideo();
 
-                // 4. Update UI
                 setShowOverlay(false);
                 bgm.stop();
 
-                // 5. Backup/Retry
-                // Ensures that if the player was in a transition state (like buffering)
-                // and ignored the first seek, this catches it.
+                // Backup check
                 setTimeout(() => {
                     if (playerRef.current) {
                         const currentTime = playerRef.current.getCurrentTime();
-                        // Only force seek if it didn't restart correctly (e.g. is > 1 second in)
                         if (currentTime > 1) {
-                            console.log("Backup seek triggered (current time > 1s)");
                             playerRef.current.seekTo(0, true);
                             playerRef.current.playVideo();
                         }
@@ -126,15 +122,27 @@ const VSLPlayer = ({ onProgress }) => {
                 }, 500);
 
             } catch (error) {
-                console.error("Error manipulating player:", error);
-                // Fallback
+                console.error("Error:", error);
                 setShowOverlay(false);
                 bgm.stop();
             }
-        } else {
-            console.warn("Player not ready.");
         }
     };
+
+    const togglePlay = (e) => {
+        if (e) e.stopPropagation();
+        if (playerRef.current) {
+            if (isPlaying) {
+                playerRef.current.pauseVideo();
+            } else {
+                playerRef.current.playVideo();
+            }
+        }
+    };
+
+    // Show controls on hover
+    const handleMouseEnter = () => !showOverlay && setShowControls(true);
+    const handleMouseLeave = () => !showOverlay && setShowControls(false);
 
     // Track progress for offer delay
     useEffect(() => {
@@ -150,6 +158,8 @@ const VSLPlayer = ({ onProgress }) => {
     return (
         <div
             className="vsl-container"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             style={{
                 position: 'relative',
                 paddingBottom: '56.25%', // 16:9 Aspect Ratio
@@ -161,17 +171,52 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%'
             }}
         >
-            {/* Wrapper for Pointer Events stability */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: showOverlay ? 'none' : 'auto'
-            }}>
-                <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
+            {/* Wrapper to catching clicks for Play/Pause when overlay is gone */}
+            <div
+                onClick={!showOverlay ? togglePlay : undefined}
+                style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    pointerEvents: 'auto',
+                    cursor: !showOverlay ? 'pointer' : 'default'
+                }}
+            >
+                <div id="youtube-player" style={{ width: '100%', height: '100%', pointerEvents: 'none' }} />
             </div>
+
+            {/* CUSTOM PLAY BUTTON (Only visible when overlay is gone) */}
+            {!showOverlay && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '20px',
+                    left: '20px',
+                    zIndex: 10,
+                    transition: 'opacity 0.3s ease',
+                    opacity: showControls || !isPlaying ? 1 : 0 // Show if paused or hovering
+                }}>
+                    <button
+                        onClick={togglePlay}
+                        style={{
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '50%',
+                            width: '48px',
+                            height: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            backdropFilter: 'blur(4px)'
+                        }}
+                    >
+                        {isPlaying ? <Pause size={24} fill="white" /> : <Play size={24} fill="white" style={{ marginLeft: '4px' }} />}
+                    </button>
+                </div>
+            )}
 
             {/* OVERLAY RESPONSIVO */}
             {showOverlay && (
