@@ -98,16 +98,21 @@ const VSLPlayer = ({ onProgress }) => {
         if (e) e.stopPropagation();
 
         if (playerRef.current) {
-            // SEQUÊNCIA OTIMIZADA PARA MOBILE: PLAY -> UNMUTE
-            playerRef.current.playVideo();
+            // Restore synchronous sequence for strict mobile browsers
+            // 1. Unmute first
+            if (playerRef.current.unMute) playerRef.current.unMute();
+            if (playerRef.current.setVolume) playerRef.current.setVolume(100);
 
-            setTimeout(() => {
-                if (playerRef.current.unMute) playerRef.current.unMute();
-                if (playerRef.current.setVolume) playerRef.current.setVolume(100);
-            }, 100);
+            // 2. Restart video (User specific request: "reinicia")
+            if (playerRef.current.seekTo) playerRef.current.seekTo(0);
+
+            // 3. Play immediately (Must be inside the event handler stack)
+            if (playerRef.current.playVideo) playerRef.current.playVideo();
 
             setNeedsInteraction(false);
-            setIsPlaying(true);
+            // We do NOT force setIsPlaying(true) optimistically here.
+            // We let the onPlayerStateChange event confirm it. 
+            // This prevents the UI from getting stuck in "Playing" mode if the video fails to start.
         }
     };
 
