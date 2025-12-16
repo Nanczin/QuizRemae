@@ -95,21 +95,11 @@ const VSLPlayer = ({ onProgress }) => {
         }
 
         if (playerRef.current) {
-            // Sequência ULTRA-SEGURA:
-            // 1. Unmute e Volume
+            // Sequência Síncrona para manter o "User Gesture"
             playerRef.current.unMute();
             playerRef.current.setVolume(100);
-
-            // 2. Play PRIMEIRO (Para garantir o inicio da reprodução com o "user gesture")
+            playerRef.current.seekTo(0);
             playerRef.current.playVideo();
-
-            // 3. Seek DEPOIS (Com pequeno delay para garantir que o play foi processado)
-            setTimeout(() => {
-                if (playerRef.current) {
-                    playerRef.current.seekTo(0);
-                }
-            }, 100);
-
             setNeedsInteraction(false);
         }
     };
