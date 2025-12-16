@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRight, Star, Trophy } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import logo from '../assets/logo.png';
-import { sfx } from '../utils/sounds';
+import { sfx, bgm } from '../utils/sounds';
 
 const questions = [
     {
@@ -260,7 +260,10 @@ const Quiz = () => {
                             </p>
 
                             <button
-                                onClick={() => navigate('/results', { state: { autoPlay: true } })}
+                                onClick={() => {
+                                    bgm.stop();
+                                    navigate('/results', { state: { autoPlay: true } });
+                                }}
                                 className="btn pulse-animation"
                                 style={{
                                     width: '100%',

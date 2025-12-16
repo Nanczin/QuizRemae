@@ -92,7 +92,6 @@ const VSLPlayer = ({ onProgress }) => {
     const handleUnlockAudio = (e) => {
         if (e) {
             e.stopPropagation();
-            // REMOVIDO e.preventDefault() -> Isso permite que o navegador detecte o festo do usuário corretamente no Android/iOS
         }
 
         if (playerRef.current) {
@@ -104,9 +103,12 @@ const VSLPlayer = ({ onProgress }) => {
             // 2. Play PRIMEIRO (Para garantir o inicio da reprodução com o "user gesture")
             playerRef.current.playVideo();
 
-            // 3. Seek DEPOIS (Assim o vídeo já está "ativo" e apenas pula pro inicio)
-            // Isso evita que o seek cancele o play ou congele o player
-            playerRef.current.seekTo(0);
+            // 3. Seek DEPOIS (Com pequeno delay para garantir que o play foi processado)
+            setTimeout(() => {
+                if (playerRef.current) {
+                    playerRef.current.seekTo(0);
+                }
+            }, 100);
 
             setNeedsInteraction(false);
         }
@@ -169,7 +171,6 @@ const VSLPlayer = ({ onProgress }) => {
             {needsInteraction && isPlayerReady && (
                 <div
                     onClick={handleUnlockAudio}
-                    onTouchEnd={handleUnlockAudio}
                     style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         zIndex: 20,
@@ -206,7 +207,6 @@ const VSLPlayer = ({ onProgress }) => {
             {!needsInteraction && (
                 <div
                     onClick={togglePlay}
-                    onTouchEnd={togglePlay}
                     style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         zIndex: 10,
