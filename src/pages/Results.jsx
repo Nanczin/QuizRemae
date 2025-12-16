@@ -94,41 +94,45 @@ const VSLPlayer = ({ onProgress }) => {
 
         if (playerRef.current && playerRef.current.playVideo) {
             try {
-                console.log("Overlay clicked: Unmuting and Restarting...");
+                console.log("Overlay clicked: Unmuting and Restarting (Sequence Fixed)...");
 
-                // 1. Unmute and Set Volume
+                // 1. Unmute first
                 playerRef.current.unMute();
                 playerRef.current.setVolume(100);
 
-                // 2. Play Video (Registers usage gesture immediately)
-                playerRef.current.playVideo();
-
-                // 3. Force Restart (Immediate attempt)
+                // 2. Seek to start immediately
                 playerRef.current.seekTo(0, true);
 
-                // 4. Hide Overlay Immediately
+                // 3. Play video (must be part of the synchronous chain for mobile)
+                playerRef.current.playVideo();
+
+                // 4. Update UI
                 setShowOverlay(false);
                 bgm.stop();
 
-                // 5. Backup Seek (Safety net for state transitions)
-                // Ensures that if the immediate seek was ignored during a state change, this one catches it.
-                // Since we already called playVideo() and unMute() synchronously, the audio context is unlocked.
+                // 5. Backup/Retry
+                // Ensures that if the player was in a transition state (like buffering)
+                // and ignored the first seek, this catches it.
                 setTimeout(() => {
-                    if (playerRef.current && playerRef.current.seekTo) {
-                        console.log("Executing backup seekTo(0)...");
-                        playerRef.current.seekTo(0, true);
-                        playerRef.current.playVideo();
+                    if (playerRef.current) {
+                        const currentTime = playerRef.current.getCurrentTime();
+                        // Only force seek if it didn't restart correctly (e.g. is > 1 second in)
+                        if (currentTime > 1) {
+                            console.log("Backup seek triggered (current time > 1s)");
+                            playerRef.current.seekTo(0, true);
+                            playerRef.current.playVideo();
+                        }
                     }
-                }, 200);
+                }, 500);
 
             } catch (error) {
-                console.error("Erro ao manipular player:", error);
-                // Fallback UI update
+                console.error("Error manipulating player:", error);
+                // Fallback
                 setShowOverlay(false);
                 bgm.stop();
             }
         } else {
-            console.warn("Player reference not found or not ready.");
+            console.warn("Player not ready.");
         }
     };
 
