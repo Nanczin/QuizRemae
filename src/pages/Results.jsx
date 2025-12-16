@@ -89,9 +89,10 @@ const VSLPlayer = ({ onProgress }) => {
     const handleUnlockAudio = () => {
         if (playerRef.current && playerRef.current.unMute) {
             playerRef.current.unMute();
-            playerRef.current.seekTo(0); // RECOMEÇA O VÍDEO
+            // playerRef.current.seekTo(0); // REMOVIDO: Evita travamento/buffering no mobile
             playerRef.current.playVideo();
             setNeedsInteraction(false);
+            setIsPlaying(true); // Força estado visual
         }
     };
 
@@ -141,11 +142,11 @@ const VSLPlayer = ({ onProgress }) => {
                     width: '100%',
                     height: '100%',
                     transformOrigin: 'center center',
-                    pointerEvents: 'none' // Click handling via overlays
+                    pointerEvents: 'none' // Evita clique direto no YouTube
                 }}
             />
 
-            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) */}
+            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) - DESIGN NOVO */}
             {needsInteraction && (
                 <div
                     onClick={handleUnlockAudio}
@@ -157,28 +158,24 @@ const VSLPlayer = ({ onProgress }) => {
                         cursor: 'pointer'
                     }}
                 >
-                    {/* BARRINHA DE AVISO */}
-                    <div style={{
-                        position: 'absolute', top: '10px',
-                        background: 'rgba(0,0,0,0.7)', color: 'white',
-                        padding: '8px 16px', borderRadius: '20px',
-                        fontSize: '0.9rem', fontWeight: '600',
-                        display: 'flex', alignItems: 'center', gap: '8px'
-                    }}>
-                        <VolumeX size={16} /> O vídeo já começou...
-                    </div>
-
                     <div className="pulse-animation" style={{
                         background: '#EF4444',
                         color: 'white',
-                        padding: '16px 24px',
+                        padding: '20px 32px',
                         borderRadius: '12px',
-                        display: 'flex', alignItems: 'center', gap: '12px',
-                        border: '2px solid rgba(255,255,255,0.3)',
-                        boxShadow: '0 0 20px rgba(239, 68, 68, 0.4)'
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                        border: '2px solid white',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                        textAlign: 'center',
+                        minWidth: '220px'
                     }}>
-                        <VolumeX size={32} color="white" />
-                        <span style={{ fontWeight: '800', textTransform: 'uppercase' }}>TOQUE PARA OUVIR</span>
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
+
+                        <div style={{ position: 'relative' }}>
+                            <VolumeX size={48} color="white" strokeWidth={1.5} />
+                        </div>
+
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
                     </div>
                 </div>
             )}
@@ -195,17 +192,18 @@ const VSLPlayer = ({ onProgress }) => {
                 />
             )}
 
-            {/* 3. ÍCONE DE PLAY GIGANTE (SE PAUSADO) */}
+            {/* 3. ÍCONE DE PLAY GIGANTE (SE PAUSADO) - AGORA VERMELHO */}
             {!needsInteraction && !isPlaying && (
                 <div style={{
                     position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
                     zIndex: 15, pointerEvents: 'none'
                 }}>
                     <div style={{
-                        background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '24px',
-                        backdropFilter: 'blur(2px)', border: '2px solid rgba(255,255,255,0.8)'
+                        background: 'rgba(239, 68, 68, 0.9)', borderRadius: '50%', padding: '24px',
+                        backdropFilter: 'blur(4px)', border: '4px solid rgba(255,255,255,0.8)',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)'
                     }}>
-                        <Play size={48} fill="white" color="white" />
+                        <Play size={48} fill="white" color="white" style={{ marginLeft: '4px' }} />
                     </div>
                 </div>
             )}
