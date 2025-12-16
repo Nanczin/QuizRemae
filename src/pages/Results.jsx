@@ -36,14 +36,15 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 1, // Start playing (muted) immediately
-                    controls: 0, // Hide controls initially
+                    autoplay: 1, // Tenta autoplay (vai falhar em alguns mobiles sem mute, mas tratamos no onReady)
+                    controls: 0, // Sem controles nativos para focar na VSL
                     rel: 0,
-                    playsinline: 1,
+                    playsinline: 1, // CRUCIAL para mobile (não ir para fullscreen auto)
                     modestbranding: 1,
                     showinfo: 0,
                     fs: 0,
-                    disablekb: 1
+                    disablekb: 1,
+                    iv_load_policy: 3 // Esconde anotações
                 },
                 events: {
                     onReady: onPlayerReady,
@@ -67,30 +68,37 @@ const VSLPlayer = ({ onProgress }) => {
 
     const onPlayerReady = (event) => {
         setIsPlayerReady(true);
-        // Autoplay Mudo
+        // Garante autoplay mudo inicial (background video)
         event.target.mute();
         event.target.playVideo();
     };
 
     const onPlayerStateChange = (event) => {
-        // Optional state handling
+        // Se o vídeo terminar, talvez mostrar algo, mas por enquanto nada essencial
     };
 
-    const handleUnlockAudio = (e) => {
-        // Critical: Prevent default browser behavior and propagation
-        e.preventDefault();
-        e.stopPropagation();
+    const handleUnlockAudio = () => {
+        // NÃO usar preventDefault() aqui para garantir que o navegador 
+        // reconheça o "user gesture" para liberar o áudio.
 
-        if (playerRef.current) {
-            // Force play instructions in specific order for mobile compatibility
-            playerRef.current.unMute();
-            playerRef.current.setVolume(100);
+        if (playerRef.current && playerRef.current.playVideo) {
+            // Sequência otimizada para garantir o play
+            try {
+                playerRef.current.unMute();
+                playerRef.current.setVolume(100);
 
-            // Use seekTo(0, true) to allow seek ahead and reset buffer
-            playerRef.current.seekTo(0, true);
+                // Seek e Play. Seek as vezes pausa o video, então chamamos play logo depois.
+                playerRef.current.seekTo(0);
 
-            // Force play again to ensure it starts processing
-            playerRef.current.playVideo();
+                // Timeout minúsculo para garantir que o comando play seja o último processado na pilha de eventos do JS
+                // Isso ajuda em alguns conflitos de estado do player
+                setTimeout(() => {
+                    playerRef.current.playVideo();
+                }, 100);
+
+            } catch (error) {
+                console.error("Erro no player:", error);
+            }
 
             setShowOverlay(false);
             bgm.stop();
@@ -130,7 +138,7 @@ const VSLPlayer = ({ onProgress }) => {
                     left: 0,
                     width: '100%',
                     height: '100%',
-                    // Removed opacity logic to prevent darkening issues
+                    pointerEvents: showOverlay ? 'none' : 'auto' // Impede interação com o player se o overlay estiver ativo (evita pause acidental)
                 }}
             />
 
