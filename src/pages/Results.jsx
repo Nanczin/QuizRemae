@@ -73,30 +73,24 @@ const VSLPlayer = ({ onProgress }) => {
     };
 
     const onPlayerStateChange = (event) => {
-        // Stop BGM when video plays with sound (handled by interactions mainly)
+        // Optional state handling
     };
 
     const handleUnlockAudio = (e) => {
-        // Ensure the interaction is captured effectively
+        // Critical: Prevent default browser behavior and propagation
         e.preventDefault();
         e.stopPropagation();
 
         if (playerRef.current) {
-            // Sequence to restart and play with sound
+            // Force play instructions in specific order for mobile compatibility
             playerRef.current.unMute();
             playerRef.current.setVolume(100);
-            playerRef.current.seekTo(0);
-            playerRef.current.playVideo();
 
-            // Allow controls after interaction
-            // Note: dynamic update of 'controls' might require re-init in some players, 
-            // but usually we just want to remove the overlay.
-            // If controls need to appear, we might need to rely on YouTube's behavior or re-render if using a wrapper library.
-            // With raw API, we can't easily switch 'controls' param dynamically without reloading, 
-            // but we can trust the video continues playing. 
-            // If the user REALLY needs controls after unlock, we might need a workaround or accept no controls for pure VSL.
-            // However, previous prompt asked for controls. 
-            // Let's assume hiding the overlay is the priority.
+            // Use seekTo(0, true) to allow seek ahead and reset buffer
+            playerRef.current.seekTo(0, true);
+
+            // Force play again to ensure it starts processing
+            playerRef.current.playVideo();
 
             setShowOverlay(false);
             bgm.stop();
@@ -140,7 +134,7 @@ const VSLPlayer = ({ onProgress }) => {
                 }}
             />
 
-            {/* OVERLAY REDESIGN */}
+            {/* OVERLAY RESPONSIVO */}
             {showOverlay && (
                 <div
                     onClick={handleUnlockAudio}
@@ -156,26 +150,28 @@ const VSLPlayer = ({ onProgress }) => {
                         justifyContent: 'center',
                         background: 'transparent',
                         zIndex: 20,
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        padding: '10px' // Padding de segurança para não colar na borda
                     }}
                 >
                     {/* The Red Card / Button Area */}
                     <div className="pulse-btn" style={{
                         background: '#DC2626', // Strong Red
-                        padding: '20px 40px',
+                        padding: 'clamp(12px, 3vw, 24px) clamp(24px, 6vw, 48px)', // Padding responsivo
                         borderRadius: '12px',
                         boxShadow: '0 0 0 0 rgba(220, 38, 38, 0.7)',
                         display: 'flex',
                         flexDirection: 'column',
                         alignItems: 'center',
-                        gap: '16px',
-                        maxWidth: '90%',
+                        gap: 'clamp(8px, 2vw, 16px)', // Gap responsivo
+                        maxWidth: '100%',
                         textAlign: 'center',
-                        animation: 'pulse-red 2s infinite'
+                        animation: 'pulse-red 2s infinite',
+                        width: 'max-content' // Ocupa apenas o necessário
                     }}>
                         <span style={{
                             color: '#FFF',
-                            fontSize: 'clamp(1rem, 4vw, 1.2rem)',
+                            fontSize: 'clamp(0.9rem, 3.5vw, 1.3rem)', // Fonte responsiva
                             fontWeight: '700',
                             textTransform: 'uppercase',
                             letterSpacing: '0.5px'
@@ -183,11 +179,18 @@ const VSLPlayer = ({ onProgress }) => {
                             Seu vídeo já começou
                         </span>
 
-                        <VolumeX size={48} color="#FFF" strokeWidth={1.5} />
+                        <VolumeX
+                            color="#FFF"
+                            strokeWidth={1.5}
+                            style={{
+                                width: 'clamp(32px, 8vw, 56px)', // Ícone responsivo
+                                height: 'clamp(32px, 8vw, 56px)'
+                            }}
+                        />
 
                         <span style={{
                             color: '#FFF',
-                            fontSize: 'clamp(1.1rem, 5vw, 1.4rem)',
+                            fontSize: 'clamp(1rem, 4.5vw, 1.5rem)', // Fonte responsiva (destaque)
                             fontWeight: '800',
                             textTransform: 'uppercase'
                         }}>
