@@ -138,159 +138,162 @@ const VSLPlayer = ({ onProgress }) => {
     }, [onProgress, isPlayerReady]);
 
     return (
-        <div
-            className="vsl-container"
-            onContextMenu={(e) => e.preventDefault()} // Prevent right-click menu
-            style={{
-                position: 'relative',
-                paddingBottom: '56.25%', // 16:9 Aspect Ratio
-                height: 0,
-                borderRadius: '16px',
-                overflow: 'hidden',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
-                background: '#000',
-                width: '100%'
-            }}
-        >
-            {/* 1. LAYER: Video Iframe
+        <>
+            <div
+                className="vsl-container"
+                onContextMenu={(e) => e.preventDefault()} // Prevent right-click menu
+                style={{
+                    position: 'relative',
+                    paddingBottom: '56.25%', // 16:9 Aspect Ratio
+                    height: 0,
+                    borderRadius: '16px',
+                    overflow: 'hidden',
+                    boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+                    background: '#000',
+                    width: '100%'
+                }}
+            >
+                {/* 1. LAYER: Video Iframe
                 Pointer Events are AUTO so user clicks directly on YouTube Iframe
                 when overlay is gone (showOverlay = false)
             */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                zIndex: 0,
-                pointerEvents: showOverlay ? 'none' : 'auto',
-                // Micro-zoom to fix border leftovers (black bars)
-                transform: 'scale(1.05)',
-                transformOrigin: 'center center'
-            }}>
-                <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
-            </div>
-
-            {/* BLOCKERS: Prevent clicking Title, Share, and Watch on YouTube logo */}
-
-            {/* Top Bar Blocker (Title, Share, Watch Later) */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '15%', // Covers top area responsively
-                minHeight: '60px',
-                zIndex: 10,
-                cursor: 'default',
-                pointerEvents: showOverlay ? 'none' : 'auto' // Active only when video is interactive
-            }} />
-
-            {/* Bottom Right Blocker (YouTube Logo / Watch on YouTube) */}
-            <div style={{
-                position: 'absolute',
-                bottom: 0,
-                right: 0,
-                width: '25%', // Covers bottom right area responsively
-                maxWidth: '180px',
-                height: '15%',
-                minHeight: '60px',
-                zIndex: 10,
-                cursor: 'default',
-                pointerEvents: showOverlay ? 'none' : 'auto'
-            }} />
-
-            {/* OVERLAY RESPONSIVO */}
-            {showOverlay && (
-                <div
-                    onClick={handleUnlockAudio}
-                    style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: '100%',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        background: 'transparent',
-                        zIndex: 20,
-                        cursor: 'pointer',
-                        padding: '10px' // Padding de segurança para não colar na borda
-                    }}
-                >
-                    {/* The Red Card / Button Area */}
-                    <div className="pulse-btn" style={{
-                        background: '#DC2626', // Strong Red
-                        padding: 'clamp(12px, 3vw, 24px) clamp(24px, 6vw, 48px)', // Padding responsivo
-                        borderRadius: '12px',
-                        boxShadow: '0 0 0 0 rgba(220, 38, 38, 0.7)',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 'clamp(8px, 2vw, 16px)', // Gap responsivo
-                        maxWidth: '100%',
-                        textAlign: 'center',
-                        animation: 'pulse-red 2s infinite',
-                        width: 'max-content' // Ocupa apenas o necessário
-                    }}>
-                        <span style={{
-                            color: '#FFF',
-                            fontSize: 'clamp(0.9rem, 3.5vw, 1.3rem)', // Fonte responsiva
-                            fontWeight: '700',
-                            textTransform: 'uppercase',
-                            letterSpacing: '0.5px'
-                        }}>
-                            Seu vídeo já começou
-                        </span>
-
-                        <VolumeX
-                            color="#FFF"
-                            strokeWidth={1.5}
-                            style={{
-                                width: 'clamp(32px, 8vw, 56px)', // Ícone responsivo
-                                height: 'clamp(32px, 8vw, 56px)'
-                            }}
-                        />
-
-                        <span style={{
-                            color: '#FFF',
-                            fontSize: 'clamp(1rem, 4.5vw, 1.5rem)', // Fonte responsiva (destaque)
-                            fontWeight: '800',
-                            textTransform: 'uppercase'
-                        }}>
-                            Clique para ouvir
-                        </span>
-                    </div>
-
-                    {/* Footer Warning Text */}
-                    <p style={{
-                        position: 'absolute',
-                        bottom: '5%',
-                        width: '100%',
-                        textAlign: 'center',
-                        color: '#FFF',
-                        fontSize: 'clamp(0.7rem, 2.5vw, 0.9rem)',
-                        fontWeight: '600',
-                        margin: 0,
-                        padding: '0 16px',
-                        pointerEvents: 'none',
-                        textShadow: '0 1px 3px rgba(0,0,0,0.8)'
-                    }}>
-                        Caso o vídeo não inicie automaticamente, clique no Play da tela.
-                    </p>
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    zIndex: 0,
+                    pointerEvents: showOverlay ? 'none' : 'auto',
+                    // Micro-zoom to fix border leftovers (black bars)
+                    transform: 'scale(1.05)',
+                    transformOrigin: 'center center'
+                }}>
+                    <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
                 </div>
-            )}
 
-            <style>{`
+                {/* BLOCKERS: Prevent clicking Title, Share, and Watch on YouTube logo */}
+
+                {/* Top Bar Blocker (Title, Share, Watch Later) */}
+                <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '15%', // Covers top area responsively
+                    minHeight: '60px',
+                    zIndex: 10,
+                    cursor: 'default',
+                    pointerEvents: showOverlay ? 'none' : 'auto' // Active only when video is interactive
+                }} />
+
+                {/* Bottom Right Blocker (YouTube Logo / Watch on YouTube) */}
+                <div style={{
+                    position: 'absolute',
+                    bottom: 0,
+                    right: 0,
+                    width: '25%', // Covers bottom right area responsively
+                    maxWidth: '180px',
+                    height: '15%',
+                    minHeight: '60px',
+                    zIndex: 10,
+                    cursor: 'default',
+                    pointerEvents: showOverlay ? 'none' : 'auto'
+                }} />
+
+                {/* OVERLAY RESPONSIVO */}
+                {showOverlay && (
+                    <div
+                        onClick={handleUnlockAudio}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            background: 'transparent',
+                            zIndex: 20,
+                            cursor: 'pointer',
+                            padding: '10px' // Padding de segurança para não colar na borda
+                        }}
+                    >
+                        {/* The Red Card / Button Area */}
+                        <div className="pulse-btn" style={{
+                            background: '#DC2626', // Strong Red
+                            padding: 'clamp(12px, 3vw, 24px) clamp(24px, 6vw, 48px)', // Padding responsivo
+                            borderRadius: '12px',
+                            boxShadow: '0 0 0 0 rgba(220, 38, 38, 0.7)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            alignItems: 'center',
+                            gap: 'clamp(8px, 2vw, 16px)', // Gap responsivo
+                            maxWidth: '100%',
+                            textAlign: 'center',
+                            animation: 'pulse-red 2s infinite',
+                            width: 'max-content' // Ocupa apenas o necessário
+                        }}>
+                            <span style={{
+                                color: '#FFF',
+                                fontSize: 'clamp(0.9rem, 3.5vw, 1.3rem)', // Fonte responsiva
+                                fontWeight: '700',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.5px'
+                            }}>
+                                Seu vídeo já começou
+                            </span>
+
+                            <VolumeX
+                                color="#FFF"
+                                strokeWidth={1.5}
+                                style={{
+                                    width: 'clamp(32px, 8vw, 56px)', // Ícone responsivo
+                                    height: 'clamp(32px, 8vw, 56px)'
+                                }}
+                            />
+
+                            <span style={{
+                                color: '#FFF',
+                                fontSize: 'clamp(1rem, 4.5vw, 1.5rem)', // Fonte responsiva (destaque)
+                                fontWeight: '800',
+                                textTransform: 'uppercase'
+                            }}>
+                                Clique para ouvir
+                            </span>
+                        </div>
+
+                    </div>
+                )}
+
+                <style>{`
                 @keyframes pulse-red {
                     0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7); }
                     70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(220, 38, 38, 0); }
                     100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
                 }
             `}</style>
-        </div>
+            </div>
+
+            {/* Footer Text (Moved Outside Container) */}
+            {
+                showOverlay && (
+                    <p style={{
+                        textAlign: 'center',
+                        color: '#DC2626', // Red matches overlay button
+                        marginTop: '16px',
+                        fontSize: '0.95rem',
+                        fontWeight: '700',
+                        fontStyle: 'italic',
+                        animation: 'fade-in 1s ease-out'
+                    }}>
+                        Caso o vídeo não inicie automaticamente, clique no Play da tela.
+                    </p>
+                )
+            }
+        </>
     );
 };
 
