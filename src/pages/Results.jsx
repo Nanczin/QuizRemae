@@ -21,22 +21,6 @@ const VSLPlayer = ({ onProgress }) => {
     const [needsInteraction, setNeedsInteraction] = useState(true);
     const [isPlaying, setIsPlaying] = useState(true);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
-
-    // Initial Check for Mobile
-    useEffect(() => {
-        const checkMobile = () => {
-            const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-            const isMobileDevice = /android|ipad|iphone|ipod/i.test(userAgent) || window.matchMedia("(max-width: 768px)").matches;
-            setIsMobile(isMobileDevice);
-            if (isMobileDevice) {
-                setNeedsInteraction(false); // Mobile: Disable custom overlay immediately
-            }
-        };
-        checkMobile();
-        window.addEventListener('resize', checkMobile);
-        return () => window.removeEventListener('resize', checkMobile);
-    }, []);
 
     // Inicialização da API do YouTube
     useEffect(() => {
@@ -54,48 +38,36 @@ const VSLPlayer = ({ onProgress }) => {
         if (window.YT && window.YT.Player) {
             initializePlayer();
         }
-    }, [isMobile]); // Re-init if isMobile changes (though unlikely to change dynamically often)
+    }, []);
 
     const initializePlayer = () => {
-        // Avoid re-initializing if already done unless needed? 
-        // Better to allow re-creation if we want to change playerVars based on isMobile
-        if (playerRef.current) {
-            // If checking mobile changed, we might want to destroy and recreate, but simple check is enough for now
-            // simpler to just init once.
-            // return; 
-        }
+        if (playerRef.current) return;
 
-        /* 
-           NOTE: If playerRef.current exists, YT API doesn't like being called again on same ID unless destroyed.
-           For this logic, we assume init runs once. 
-        */
-        if (window.YT && window.YT.Player && !playerRef.current) {
-            try {
-                playerRef.current = new window.YT.Player('youtube-player', {
-                    videoId: VSL_CONFIG.videoId,
-                    width: '100%',
-                    height: '100%',
-                    playerVars: {
-                        autoplay: isMobile ? 0 : 1,      // Mobile: No Autoplay
-                        mute: isMobile ? 0 : 1,          // Mobile: Start with sound ready (user clicks play)
-                        controls: isMobile ? 1 : 0,      // Mobile: Native Controls
-                        rel: 0,
-                        modestbranding: 1,
-                        playsinline: 1,
-                        fs: isMobile ? 1 : 0,            // Mobile: Allow fullscreen
-                        disablekb: 1,
-                        enablejsapi: 1,
-                        origin: window.location.origin,
-                        widget_referrer: window.location.href
-                    },
-                    events: {
-                        'onReady': onPlayerReady,
-                        'onStateChange': onPlayerStateChange
-                    }
-                });
-            } catch (e) {
-                console.error("YouTube API Init Error", e);
-            }
+        try {
+            playerRef.current = new window.YT.Player('youtube-player', {
+                videoId: VSL_CONFIG.videoId,
+                width: '100%',
+                height: '100%',
+                playerVars: {
+                    autoplay: 1,      // Tenta autoplay mudo (Padrão VSL)
+                    mute: 1,
+                    controls: 0,      // Sem controles nativos
+                    rel: 0,
+                    modestbranding: 1,
+                    playsinline: 1,
+                    fs: 0,
+                    disablekb: 1,
+                    enablejsapi: 1,
+                    origin: window.location.origin,
+                    widget_referrer: window.location.href
+                },
+                events: {
+                    'onReady': onPlayerReady,
+                    'onStateChange': onPlayerStateChange
+                }
+            });
+        } catch (e) {
+            console.error("YouTube API Init Error", e);
         }
     };
 
@@ -232,7 +204,7 @@ const VSLPlayer = ({ onProgress }) => {
             )}
 
             {/* 2. CONTROLADOR DE PLAY/PAUSE (SEM ÍCONES EXTRAS) */}
-            {!needsInteraction && !isMobile && (
+            {!needsInteraction && (
                 <div
                     onClick={togglePlay}
                     style={{
