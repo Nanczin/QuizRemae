@@ -94,27 +94,41 @@ const VSLPlayer = ({ onProgress }) => {
 
         if (playerRef.current && playerRef.current.playVideo) {
             try {
-                // Força desbloqueio imediato
+                console.log("Overlay clicked: Unmuting and Restarting...");
+
+                // 1. Unmute and Set Volume
                 playerRef.current.unMute();
                 playerRef.current.setVolume(100);
 
-                // Reinicia o vídeo do zero (sem setTimeout para evitar bloqueio de mobile)
-                playerRef.current.seekTo(0, true);
-                
-                // Força o play
+                // 2. Play Video (Registers usage gesture immediately)
                 playerRef.current.playVideo();
 
-                // Feedback visual imediato para o usuário
+                // 3. Force Restart (Immediate attempt)
+                playerRef.current.seekTo(0, true);
+
+                // 4. Hide Overlay Immediately
                 setShowOverlay(false);
                 bgm.stop();
 
+                // 5. Backup Seek (Safety net for state transitions)
+                // Ensures that if the immediate seek was ignored during a state change, this one catches it.
+                // Since we already called playVideo() and unMute() synchronously, the audio context is unlocked.
+                setTimeout(() => {
+                    if (playerRef.current && playerRef.current.seekTo) {
+                        console.log("Executing backup seekTo(0)...");
+                        playerRef.current.seekTo(0, true);
+                        playerRef.current.playVideo();
+                    }
+                }, 200);
+
             } catch (error) {
                 console.error("Erro ao manipular player:", error);
-                // Fallback: garante que o overlay suma mesmo se der erro no play, 
-                // para permitir que o usuário tente interagir com o player nativo se necessário
-                setShowOverlay(false); 
+                // Fallback UI update
+                setShowOverlay(false);
                 bgm.stop();
             }
+        } else {
+            console.warn("Player reference not found or not ready.");
         }
     };
 
