@@ -36,7 +36,8 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 1,
+                    autoplay: 1,      // Tenta Autoplay
+                    mute: 1,          // CRÍTICO: Garante que o autoplay funcione na maioria dos browsers
                     controls: 0,
                     rel: 0,
                     playsinline: 1,
@@ -69,13 +70,13 @@ const VSLPlayer = ({ onProgress }) => {
 
     const onPlayerReady = (event) => {
         setIsPlayerReady(true);
-        // Autoplay Mudo
+        // Reforça o estado mudo e play
         event.target.mute();
         event.target.playVideo();
     };
 
     const onPlayerStateChange = (event) => {
-        // Lógica ROBUSTA: Só esconde o overlay se o vídeo estiver REALMENTE tocando e COM SOM
+        // Se estiver tocando E não estiver mudo, esconde o overlay
         if (event.data === window.YT.PlayerState.PLAYING) {
             const isMuted = event.target.isMuted();
             if (!isMuted) {
@@ -90,13 +91,20 @@ const VSLPlayer = ({ onProgress }) => {
 
         if (playerRef.current && playerRef.current.playVideo) {
             try {
-                // Sequência Síncrona
+                // Força desbloqueio
                 playerRef.current.unMute();
                 playerRef.current.setVolume(100);
 
-                // Seek e Play
-                playerRef.current.seekTo(0, true);
+                // Em mobile, às vezes o seek causa pause. Vamos garantir o play primeiro.
                 playerRef.current.playVideo();
+
+                // Se o vídeo já estiver rodando (background), o seek(0) é útil.
+                // Mas se não estiver, o playVideo é a prioridade.
+                // Vamos tentar resetar APÓS garantir o play.
+                setTimeout(() => {
+                    playerRef.current.seekTo(0, true);
+                    playerRef.current.playVideo(); // Reforça play pós-seek
+                }, 50);
 
             } catch (error) {
                 console.error("Erro ao manipular player:", error);
