@@ -130,12 +130,20 @@ const VSLPlayer = ({ onProgress }) => {
     };
 
     const togglePlay = (e) => {
-        if (e) e.stopPropagation();
-        if (playerRef.current) {
-            if (isPlaying) {
+        if (e) {
+            e.stopPropagation();
+        }
+
+        if (playerRef.current && playerRef.current.getPlayerState) {
+            const playerState = playerRef.current.getPlayerState();
+            const isVideoPlaying = playerState === window.YT.PlayerState.PLAYING;
+
+            if (isVideoPlaying) {
                 playerRef.current.pauseVideo();
+                setIsPlaying(false); // Immediate UI update
             } else {
                 playerRef.current.playVideo();
+                setIsPlaying(true); // Immediate UI update
             }
         }
     };
@@ -190,7 +198,7 @@ const VSLPlayer = ({ onProgress }) => {
                         height: '100%',
                         zIndex: 1, // Above iframe
                         cursor: 'pointer',
-                        background: 'transparent' // Explicitly transparent
+                        background: 'rgba(0,0,0,0)' // Explicitly transparent but hittable
                     }}
                 />
             )}
