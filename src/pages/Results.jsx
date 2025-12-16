@@ -186,6 +186,9 @@ const VSLPlayer = ({ onProgress }) => {
                 </div>
             )}
         </div>
+        <div style={{ color: '#666', fontSize: '10px', textAlign: 'center', marginTop: '4px', fontFamily: 'monospace' }}>
+             DEBUG: Interact={needsInteraction.toString()} | Err={hasError.toString()} | SrcLoaded={VSLVideo ? 'Yes' : 'No'}
+        </div>
     );
 };
 
@@ -194,6 +197,13 @@ const Results = () => {
     const [showOffer, setShowOffer] = useState(false);
 
     const navigate = useNavigate();
+
+    // Show offer immediately if delay is 0
+    useEffect(() => {
+        if (VSL_CONFIG.offerDelaySeconds === 0) {
+            setShowOffer(true);
+        }
+    }, []);
 
     const handleVideoProgress = (currentTime) => {
         // Smart Delay Logic
