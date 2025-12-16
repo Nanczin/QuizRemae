@@ -302,6 +302,11 @@ const Results = () => {
 
     const navigate = useNavigate();
 
+    // Scroll to Top on Mount (Ensures Headline is visible)
+    useEffect(() => {
+        window.scrollTo(0, 0);
+    }, []);
+
     // Show offer immediately if delay is 0
     useEffect(() => {
         if (VSL_CONFIG.offerDelaySeconds === 0) {
