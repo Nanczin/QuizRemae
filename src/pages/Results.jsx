@@ -210,18 +210,34 @@ const VSLPlayer = ({ onProgress }) => {
                 <div
                     onClick={(e) => {
                         e.stopPropagation();
-                        if (playerRef.current) playerRef.current.playVideo();
+                        if (playerRef.current) {
+                            playerRef.current.playVideo();
+                            setIsPlaying(true); // Optimistic UI update
+                        }
+                    }}
+                    // Backup for mobile touch
+                    onTouchEnd={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault(); // Prevent double-fire with onClick
+                        if (playerRef.current) {
+                            playerRef.current.playVideo();
+                            setIsPlaying(true);
+                        }
                     }}
                     style={{
                         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                        zIndex: 25, cursor: 'pointer' // High z-index to guarantee click capture
+                        zIndex: 25, cursor: 'pointer',
+                        // Increase touch target size
+                        width: '100px', height: '100px',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
                     }}
                 >
                     <div style={{
                         background: 'rgba(239, 68, 68, 0.9)', borderRadius: '50%', padding: '24px',
                         backdropFilter: 'blur(4px)', border: '4px solid rgba(255,255,255,0.8)',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        pointerEvents: 'none' // Ensure clicks pass to the parent div handler
                     }}>
                         <Play size={48} fill="white" color="white" style={{ marginLeft: '4px' }} />
                     </div>
