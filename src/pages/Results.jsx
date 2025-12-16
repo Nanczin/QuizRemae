@@ -52,15 +52,16 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 1,
-                    mute: 1,          // Mute para garantir autoplay
-                    controls: 0,      // ESCONDE NATIVOS (Sem barra, titulo, logo)
+                    autoplay: 0,      // AUTOPLAY VIA JS É MAIS SEGURO NO MOBILE
+                    controls: 0,
                     rel: 0,
                     modestbranding: 1,
                     playsinline: 1,
                     fs: 0,
                     disablekb: 1,
-                    origin: window.location.origin
+                    enablejsapi: 1,
+                    origin: window.location.origin,
+                    widget_referrer: window.location.href
                 },
                 events: {
                     'onReady': onPlayerReady,
@@ -95,6 +96,8 @@ const VSLPlayer = ({ onProgress }) => {
     // --- INTERAÇÕES ---
 
     const handleUnlockAudio = (e) => {
+        // Prevent ghost clicks if touch triggered first
+        if (e && e.cancelable) e.preventDefault();
         if (e) e.stopPropagation();
 
         if (playerRef.current) {
@@ -110,9 +113,6 @@ const VSLPlayer = ({ onProgress }) => {
             if (playerRef.current.playVideo) playerRef.current.playVideo();
 
             setNeedsInteraction(false);
-            // We do NOT force setIsPlaying(true) optimistically here.
-            // We let the onPlayerStateChange event confirm it. 
-            // This prevents the UI from getting stuck in "Playing" mode if the video fails to start.
         }
     };
 
@@ -170,12 +170,14 @@ const VSLPlayer = ({ onProgress }) => {
             {needsInteraction && isPlayerReady && (
                 <div
                     onClick={handleUnlockAudio}
+                    onTouchEnd={handleUnlockAudio} // Add Direct Touch Handler
                     style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         zIndex: 20,
                         background: 'transparent',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer'
+                        cursor: 'pointer',
+                        touchAction: 'manipulation' // Improves tap response
                     }}
                 >
                     <div className="pulse-animation" style={{
@@ -187,7 +189,8 @@ const VSLPlayer = ({ onProgress }) => {
                         border: '2px solid white',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
                         textAlign: 'center',
-                        minWidth: '220px'
+                        minWidth: '220px',
+                        pointerEvents: 'none' // Clicks pass to parent
                     }}>
                         <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
 
