@@ -73,6 +73,12 @@ const VSLPlayer = ({ onProgress }) => {
     };
 
     const onPlayerReady = (event) => {
+        // PERMISSÕES EXTRA PARA WEBVIEW
+        const iframe = event.target.getIframe();
+        if (iframe) {
+            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; accelerometer; gyroscope; picture-in-picture');
+        }
+
         event.target.mute();
         event.target.playVideo();
         setIsPlayerReady(true);
@@ -89,23 +95,19 @@ const VSLPlayer = ({ onProgress }) => {
     // --- INTERAÇÕES ---
 
     const handleUnlockAudio = (e) => {
-        if (e) {
-            e.stopPropagation();
-        }
+        if (e) e.stopPropagation();
 
-        if (playerRef.current && playerRef.current.unMute) {
-            playerRef.current.unMute();
-            playerRef.current.setVolume(100);
-            // Removed seekTo(0) as it can cause freezing in some mobile webviews
+        if (playerRef.current) {
+            // SEQUÊNCIA OTIMIZADA PARA MOBILE: PLAY -> UNMUTE
             playerRef.current.playVideo();
-            setNeedsInteraction(false);
 
-            // Safety check: force play again after a small delay to ensure it activates on mobile
             setTimeout(() => {
-                if (playerRef.current && playerRef.current.playVideo) {
-                    playerRef.current.playVideo();
-                }
-            }, 300);
+                if (playerRef.current.unMute) playerRef.current.unMute();
+                if (playerRef.current.setVolume) playerRef.current.setVolume(100);
+            }, 100);
+
+            setNeedsInteraction(false);
+            setIsPlaying(true);
         }
     };
 
@@ -155,7 +157,7 @@ const VSLPlayer = ({ onProgress }) => {
                     width: '100%',
                     height: '100%',
                     transformOrigin: 'center center',
-                    // pointerEvents: 'none' REMOVED to improve WebView compatibility
+                    pointerEvents: 'auto' // Garante interatividade
                 }}
             />
 
