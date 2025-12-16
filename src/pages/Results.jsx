@@ -149,7 +149,7 @@ const VSLPlayer = ({ onProgress }) => {
                     width: '100%',
                     height: '100%',
                     transformOrigin: 'center center',
-                    pointerEvents: 'none' // Evita clique direto no YouTube
+                    // pointerEvents: 'none' REMOVED to improve WebView compatibility
                 }}
             />
 
@@ -179,7 +179,7 @@ const VSLPlayer = ({ onProgress }) => {
                         <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
 
                         <div style={{ position: 'relative' }}>
-                            <VolumeX size={48} color="white" strokeWidth={1.5} />
+                            <Play size={48} fill="white" color="white" />
                         </div>
 
                         <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
@@ -202,10 +202,13 @@ const VSLPlayer = ({ onProgress }) => {
             {/* 3. ÍCONE DE PLAY GIGANTE (SE PAUSADO) - AGORA VERMELHO */}
             {!needsInteraction && !isPlaying && isPlayerReady && (
                 <div
-                    onClick={togglePlay}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (playerRef.current) playerRef.current.playVideo();
+                    }}
                     style={{
                         position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                        zIndex: 15, cursor: 'pointer'
+                        zIndex: 25, cursor: 'pointer' // High z-index to guarantee click capture
                     }}
                 >
                     <div style={{
