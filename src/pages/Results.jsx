@@ -140,6 +140,7 @@ const VSLPlayer = ({ onProgress }) => {
     return (
         <div
             className="vsl-container"
+            onContextMenu={(e) => e.preventDefault()} // Prevent right-click menu
             style={{
                 position: 'relative',
                 paddingBottom: '56.25%', // 16:9 Aspect Ratio
@@ -166,6 +167,35 @@ const VSLPlayer = ({ onProgress }) => {
             }}>
                 <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
             </div>
+
+            {/* BLOCKERS: Prevent clicking Title, Share, and Watch on YouTube logo */}
+
+            {/* Top Bar Blocker (Title, Share, Watch Later) */}
+            <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '100%',
+                height: '15%', // Covers top area responsively
+                minHeight: '60px',
+                zIndex: 10,
+                cursor: 'default',
+                pointerEvents: showOverlay ? 'none' : 'auto' // Active only when video is interactive
+            }} />
+
+            {/* Bottom Right Blocker (YouTube Logo / Watch on YouTube) */}
+            <div style={{
+                position: 'absolute',
+                bottom: 0,
+                right: 0,
+                width: '25%', // Covers bottom right area responsively
+                maxWidth: '180px',
+                height: '15%',
+                minHeight: '60px',
+                zIndex: 10,
+                cursor: 'default',
+                pointerEvents: showOverlay ? 'none' : 'auto'
+            }} />
 
             {/* OVERLAY RESPONSIVO */}
             {showOverlay && (
