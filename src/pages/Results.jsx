@@ -18,15 +18,13 @@ const VSL_CONFIG = {
 // ==========================================
 const VSLPlayer = ({ onProgress }) => {
     const playerRef = useRef(null);
-    const [needsInteraction, setNeedsInteraction] = useState(true);
-    const [isPlaying, setIsPlaying] = useState(true);
-    const [isPlayerReady, setIsPlayerReady] = useState(false);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [hasStarted, setHasStarted] = useState(false);
 
     // Inicialização da API do YouTube
     useEffect(() => {
         bgm.stop();
 
-        // 1. Carrega API se não existir
         if (!window.YT) {
             const tag = document.createElement('script');
             tag.src = "https://www.youtube.com/iframe_api";
@@ -34,10 +32,8 @@ const VSLPlayer = ({ onProgress }) => {
             firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
         }
 
-        // 2. Define callback global
         window.onYouTubeIframeAPIReady = initializePlayer;
 
-        // 3. Se já carregada, inicializa manualmente
         if (window.YT && window.YT.Player) {
             initializePlayer();
         }
@@ -52,19 +48,17 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 0,      // AUTOPLAY VIA JS É MAIS SEGURO NO MOBILE
-                    controls: 0,
+                    autoplay: 0,      // Começa PAUSADO para compatibilidade total
+                    controls: 0,      // SEM BARRA DE PROGRESSO (Pedido do usuário)
                     rel: 0,
                     modestbranding: 1,
                     playsinline: 1,
                     fs: 0,
                     disablekb: 1,
                     enablejsapi: 1,
-                    origin: window.location.origin,
-                    widget_referrer: window.location.href
+                    origin: window.location.origin
                 },
                 events: {
-                    'onReady': onPlayerReady,
                     'onStateChange': onPlayerStateChange
                 }
             });
@@ -73,55 +67,40 @@ const VSLPlayer = ({ onProgress }) => {
         }
     };
 
-    const onPlayerReady = (event) => {
-        // PERMISSÕES EXTRA PARA WEBVIEW
-        const iframe = event.target.getIframe();
-        if (iframe) {
-            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; accelerometer; gyroscope; picture-in-picture');
-        }
-
-        event.target.mute();
-        event.target.playVideo();
-        setIsPlayerReady(true);
-    };
-
     const onPlayerStateChange = (event) => {
-        if (event.data === window.YT.PlayerState.PLAYING || event.data === window.YT.PlayerState.BUFFERING) {
+        if (event.data === window.YT.PlayerState.PLAYING) {
             setIsPlaying(true);
-        } else if (event.data === window.YT.PlayerState.PAUSED) {
+            setHasStarted(true);
+        } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
             setIsPlaying(false);
         }
     };
 
-    // --- INTERAÇÕES ---
+    const handleInitialPlay = (e) => {
+        if (e) {
+            e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
+        }
 
-    const handleUnlockAudio = (e) => {
-        // Prevent ghost clicks if touch triggered first
-        if (e && e.cancelable) e.preventDefault();
-        if (e) e.stopPropagation();
-
-        if (playerRef.current) {
-            // Restore synchronous sequence for strict mobile browsers
-            // 1. Unmute first
-            if (playerRef.current.unMute) playerRef.current.unMute();
-            if (playerRef.current.setVolume) playerRef.current.setVolume(100);
-
-            // 2. Restart video (User specific request: "reinicia")
-            if (playerRef.current.seekTo) playerRef.current.seekTo(0);
-
-            // 3. Play immediately (Must be inside the event handler stack)
-            if (playerRef.current.playVideo) playerRef.current.playVideo();
-
-            setNeedsInteraction(false);
+        if (playerRef.current && playerRef.current.playVideo) {
+            // Garante som ligado e play
+            playerRef.current.unMute();
+            playerRef.current.setVolume(100);
+            playerRef.current.playVideo();
+            setHasStarted(true);
+            setIsPlaying(true);
         }
     };
 
     const togglePlay = (e) => {
-        if (e) e.stopPropagation();
-        if (!playerRef.current || !playerRef.current.getPlayerState) return;
+        if (e) {
+            e.stopPropagation();
+            if (e.cancelable) e.preventDefault();
+        }
 
-        const playerState = playerRef.current.getPlayerState();
-        if (playerState === window.YT.PlayerState.PLAYING) {
+        if (!playerRef.current) return;
+
+        if (isPlaying) {
             playerRef.current.pauseVideo();
         } else {
             playerRef.current.playVideo();
@@ -151,7 +130,6 @@ const VSLPlayer = ({ onProgress }) => {
                 boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
             }}
         >
-            {/* WRAPPER COM ESCALA PARA REMOVER BORDAS */}
             <div
                 id="youtube-player"
                 style={{
@@ -162,103 +140,48 @@ const VSLPlayer = ({ onProgress }) => {
                     width: '100%',
                     height: '100%',
                     transformOrigin: 'center center',
-                    pointerEvents: 'auto' // Garante interatividade
+                    pointerEvents: 'none' // Importante: Clicks passam para nosso overlay controller
                 }}
             />
 
-            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) - DESIGN NOVO */}
-            {needsInteraction && isPlayerReady && (
-                <div
-                    onClick={handleUnlockAudio}
-                    onTouchEnd={handleUnlockAudio} // Add Direct Touch Handler
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 20,
-                        background: 'transparent',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer',
-                        touchAction: 'manipulation' // Improves tap response
-                    }}
-                >
+            {/* CONTROLADOR MESTRE INVISÍVEL - Cobre todo o vídeo */}
+            <div
+                onClick={hasStarted ? togglePlay : handleInitialPlay}
+                // Adiciona suporte a touch para mobile (Instagram)
+                onTouchEnd={hasStarted ? togglePlay : handleInitialPlay}
+                style={{
+                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                    zIndex: 10,
+                    cursor: 'pointer',
+                    touchAction: 'manipulation'
+                }}
+            />
+
+            {/* BOTÃO PLAY INICIAL OU RE-PLAY (Se pausado) */}
+            {!isPlaying && (
+                <div style={{
+                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+                    zIndex: 20, pointerEvents: 'none' // O click é pego pelo div pai acima
+                }}>
                     <div className="pulse-animation" style={{
-                        background: '#EF4444',
-                        color: 'white',
-                        padding: '20px 32px',
-                        borderRadius: '12px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
-                        border: '2px solid white',
+                        background: 'rgba(239, 68, 68, 0.9)',
+                        borderRadius: '50%',
+                        padding: '24px',
+                        backdropFilter: 'blur(4px)',
+                        border: '4px solid rgba(255,255,255,0.8)',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                        textAlign: 'center',
-                        minWidth: '220px',
-                        pointerEvents: 'none' // Clicks pass to parent
-                    }}>
-                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
-
-                        <div style={{ position: 'relative' }}>
-                            <Play size={48} fill="white" color="white" />
-                        </div>
-
-                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
-                    </div>
-                </div>
-            )}
-
-            {/* 2. AREA INVISÍVEL PARA TOGGLE PLAY/PAUSE (PÓS-INTERAÇÃO) */}
-            {!needsInteraction && isPlayerReady && (
-                <div
-                    onClick={togglePlay}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 10,
-                        cursor: 'pointer'
-                    }}
-                />
-            )}
-
-            {/* 3. ÍCONE DE PLAY GIGANTE (SE PAUSADO) - AGORA VERMELHO */}
-            {!needsInteraction && !isPlaying && isPlayerReady && (
-                <div
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (playerRef.current) {
-                            playerRef.current.playVideo();
-                            setIsPlaying(true); // Optimistic UI update
-                        }
-                    }}
-                    // Backup for mobile touch
-                    onTouchEnd={(e) => {
-                        e.stopPropagation();
-                        e.preventDefault(); // Prevent double-fire with onClick
-                        if (playerRef.current) {
-                            playerRef.current.playVideo();
-                            setIsPlaying(true);
-                        }
-                    }}
-                    style={{
-                        position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                        zIndex: 25, cursor: 'pointer',
-                        // Increase touch target size
-                        width: '100px', height: '100px',
                         display: 'flex', alignItems: 'center', justifyContent: 'center'
-                    }}
-                >
-                    <div style={{
-                        background: 'rgba(239, 68, 68, 0.9)', borderRadius: '50%', padding: '24px',
-                        backdropFilter: 'blur(4px)', border: '4px solid rgba(255,255,255,0.8)',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        pointerEvents: 'none' // Ensure clicks pass to the parent div handler
                     }}>
                         <Play size={48} fill="white" color="white" style={{ marginLeft: '4px' }} />
                     </div>
                 </div>
             )}
 
-            {/* 4. ÍCONE DE PAUSE DISCRETO (SE RODANDO) */}
-            {!needsInteraction && isPlaying && (
+            {/* BOTÃO PAUSE DISCRETO (Apenas quando tocando, para feedback visual) */}
+            {isPlaying && (
                 <div style={{
                     position: 'absolute', bottom: '20px', left: '20px',
-                    zIndex: 15, pointerEvents: 'none', opacity: 0.8
+                    zIndex: 15, pointerEvents: 'none', opacity: 0.6
                 }}>
                     <div style={{
                         background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '12px',
