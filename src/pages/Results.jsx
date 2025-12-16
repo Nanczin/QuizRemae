@@ -36,15 +36,16 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 1, // Tenta autoplay (vai falhar em alguns mobiles sem mute, mas tratamos no onReady)
-                    controls: 0, // Sem controles nativos para focar na VSL
+                    autoplay: 1,
+                    controls: 0,
                     rel: 0,
-                    playsinline: 1, // CRUCIAL para mobile (não ir para fullscreen auto)
+                    playsinline: 1,
                     modestbranding: 1,
                     showinfo: 0,
                     fs: 0,
                     disablekb: 1,
-                    iv_load_policy: 3 // Esconde anotações
+                    iv_load_policy: 3,
+                    origin: window.location.origin
                 },
                 events: {
                     onReady: onPlayerReady,
@@ -68,38 +69,38 @@ const VSLPlayer = ({ onProgress }) => {
 
     const onPlayerReady = (event) => {
         setIsPlayerReady(true);
-        // Garante autoplay mudo inicial (background video)
+        // Autoplay Mudo
         event.target.mute();
         event.target.playVideo();
     };
 
     const onPlayerStateChange = (event) => {
-        // Se o vídeo terminar, talvez mostrar algo, mas por enquanto nada essencial
+        // Lógica ROBUSTA: Só esconde o overlay se o vídeo estiver REALMENTE tocando e COM SOM
+        if (event.data === window.YT.PlayerState.PLAYING) {
+            const isMuted = event.target.isMuted();
+            if (!isMuted) {
+                setShowOverlay(false);
+                bgm.stop();
+            }
+        }
     };
 
     const handleUnlockAudio = (e) => {
-        // Mantemos preventDefault opcionalmente, mas o foco é a execução SÍNCRONA
         if (e && e.preventDefault) e.preventDefault();
 
         if (playerRef.current && playerRef.current.playVideo) {
             try {
-                // Sequência Síncrona, direta e sem timeouts
-                // A chave para mobile é executar playVideo() na mesma call stack do evento de clique.
+                // Sequência Síncrona
                 playerRef.current.unMute();
                 playerRef.current.setVolume(100);
 
-                // Seek para o início (com allowSeekAhead=true)
+                // Seek e Play
                 playerRef.current.seekTo(0, true);
-
-                // Play IMEDIATO
                 playerRef.current.playVideo();
 
             } catch (error) {
                 console.error("Erro ao manipular player:", error);
             }
-
-            setShowOverlay(false);
-            bgm.stop();
         }
     };
 
