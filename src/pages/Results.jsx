@@ -92,15 +92,21 @@ const VSLPlayer = ({ onProgress }) => {
     const handleUnlockAudio = (e) => {
         if (e) {
             e.stopPropagation();
-            if (e.cancelable) e.preventDefault();
+            // Retiramos e.preventDefault() para garantir que o navegador mobile
+            // reconheça o evento como um "user gesture" legítimo para play de vídeo.
         }
 
         if (playerRef.current) {
-            // Sequência de desbloqueio para VSL
+            // Sequência OTIMIZADA para Mobile/WebView:
+            // 1. Unmute
             playerRef.current.unMute();
             playerRef.current.setVolume(100);
-            playerRef.current.seekTo(0); // Reinicia ao liberar áudio
+
+            // 2. Play (Ação principal)
+            // Removemos seekTo(0) pois estava travando o player no logo em alguns dispositivos.
+            // Se o autoplay funcionou (mesmo mudo), ele continua. Se não, começa do zero.
             playerRef.current.playVideo();
+
             setNeedsInteraction(false);
         }
     };
