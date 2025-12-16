@@ -20,6 +20,8 @@ const VSLPlayer = ({ onProgress }) => {
     const playerRef = useRef(null);
     const [isPlayerReady, setIsPlayerReady] = useState(false);
     const [showOverlay, setShowOverlay] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [showControls, setShowControls] = useState(false);
 
     useEffect(() => {
         // Load YouTube IFrame Player API code asynchronously
@@ -38,13 +40,13 @@ const VSLPlayer = ({ onProgress }) => {
                 playerVars: {
                     autoplay: 1,      // Tenta Autoplay
                     mute: 1,          // CRÍTICO: Garante que o autoplay funcione na maioria dos browsers
-                    controls: 1,      // SHOW Native Controls
+                    controls: 0,      // HIDE Native Controls (Restricted mode)
                     rel: 0,
                     playsinline: 1,
                     modestbranding: 1,
                     showinfo: 0,
-                    fs: 1,            // Enable fullscreen button
-                    disablekb: 0,     // Enable keyboard controls
+                    fs: 0,            // No fullscreen
+                    disablekb: 1,     // No keyboard
                     iv_load_policy: 3,
                     origin: window.location.origin
                 },
@@ -76,7 +78,9 @@ const VSLPlayer = ({ onProgress }) => {
     };
 
     const onPlayerStateChange = (event) => {
+        // Update Playing State
         const playing = event.data === window.YT.PlayerState.PLAYING;
+        setIsPlaying(playing);
 
         // Se estiver tocando E não estiver mudo, esconde o overlay
         if (playing) {
@@ -125,6 +129,27 @@ const VSLPlayer = ({ onProgress }) => {
         }
     };
 
+    const togglePlay = (e) => {
+        if (e) e.stopPropagation();
+
+        if (playerRef.current && playerRef.current.getPlayerState) {
+            const playerState = playerRef.current.getPlayerState();
+            const isVideoPlaying = playerState === window.YT.PlayerState.PLAYING;
+
+            if (isVideoPlaying) {
+                playerRef.current.pauseVideo();
+                setIsPlaying(false);
+            } else {
+                playerRef.current.playVideo();
+                setIsPlaying(true);
+            }
+        }
+    };
+
+    // Show controls on hover
+    const handleMouseEnter = () => !showOverlay && setShowControls(true);
+    const handleMouseLeave = () => !showOverlay && setShowControls(false);
+
     // Track progress for offer delay
     useEffect(() => {
         const interval = setInterval(() => {
@@ -139,6 +164,8 @@ const VSLPlayer = ({ onProgress }) => {
     return (
         <div
             className="vsl-container"
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
             style={{
                 position: 'relative',
                 paddingBottom: '56.25%', // 16:9 Aspect Ratio
@@ -150,17 +177,65 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%'
             }}
         >
-            {/* Wrapper ensures pointerEvents are managed correctly */}
-            <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                width: '100%',
-                height: '100%',
-                pointerEvents: showOverlay ? 'none' : 'auto' // Interaction blocked ONLY when overlay is visible
-            }}>
+            {/* 1. LAYER: Video Iframe */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
                 <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
             </div>
+
+            {/* 2. LAYER: Interaction Shield (Transparent)
+                Captures clicks to toggle play/pause, preventing them from being eaten by the iframe
+            */}
+            {!showOverlay && (
+                <div
+                    onClick={togglePlay}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 1, // Above iframe
+                        cursor: 'pointer',
+                        background: 'rgba(0,0,0,0)' // Transparent but hittable
+                    }}
+                />
+            )}
+
+            {/* 3. LAYER: Custom Play/Pause Button */}
+            {!showOverlay && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '20px',
+                    left: '20px',
+                    zIndex: 10, // Above Shield
+                    pointerEvents: 'none', // Allow transparency
+                    transition: 'opacity 0.3s ease',
+                    opacity: showControls || !isPlaying ? 1 : 0
+                }}>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            togglePlay();
+                        }}
+                        style={{
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            border: '1px solid rgba(255, 255, 255, 0.2)',
+                            borderRadius: '50%',
+                            width: '48px',
+                            height: '48px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            cursor: 'pointer',
+                            color: 'white',
+                            backdropFilter: 'blur(4px)',
+                            pointerEvents: 'auto'
+                        }}
+                    >
+                        {isPlaying ? <Pause size={24} fill="white" /> : <Play size={24} fill="white" style={{ marginLeft: '4px' }} />}
+                    </button>
+                </div>
+            )}
 
             {/* OVERLAY RESPONSIVO */}
             {showOverlay && (
