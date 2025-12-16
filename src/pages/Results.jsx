@@ -18,6 +18,7 @@ const VSL_CONFIG = {
 // ==========================================
 const VSLPlayer = ({ onProgress }) => {
     const videoRef = useRef(null);
+    const [needsInteraction, setNeedsInteraction] = useState(true);
 
     // Track progress for "Smart Offer Delay"
     useEffect(() => {
@@ -41,10 +42,22 @@ const VSLPlayer = ({ onProgress }) => {
         bgm.stop();
     }, []);
 
+    const handleUnlockAudio = (e) => {
+        if (e) e.stopPropagation();
+        if (videoRef.current) {
+            videoRef.current.currentTime = 0;
+            videoRef.current.muted = false;
+            videoRef.current.volume = 1.0;
+            videoRef.current.play();
+            setNeedsInteraction(false);
+        }
+    };
+
     return (
         <div
             className="vsl-container"
             style={{
+                position: 'relative',
                 borderRadius: '16px',
                 overflow: 'hidden',
                 boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
@@ -56,8 +69,11 @@ const VSLPlayer = ({ onProgress }) => {
             <video
                 ref={videoRef}
                 src="/vsl-quiz.mp4"
-                controls
+                muted
+                autoPlay
                 playsInline
+                loop
+                controls={!needsInteraction}
                 controlsList="nodownload"
                 style={{
                     width: '100%',
@@ -67,6 +83,42 @@ const VSLPlayer = ({ onProgress }) => {
             >
                 Seu navegador não suporta a tag de vídeo.
             </video>
+
+            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) */}
+            {needsInteraction && (
+                <div
+                    onClick={handleUnlockAudio}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 20,
+                        background: 'rgba(0,0,0,0.1)', // Leve overlay escuro
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer',
+                        touchAction: 'manipulation'
+                    }}
+                >
+                    <div className="pulse-animation" style={{
+                        background: '#EF4444',
+                        color: 'white',
+                        padding: '20px 32px',
+                        borderRadius: '12px',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                        border: '2px solid white',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                        textAlign: 'center',
+                        minWidth: '220px',
+                        pointerEvents: 'none'
+                    }}>
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
+
+                        <div style={{ position: 'relative' }}>
+                            <Play size={48} fill="white" color="white" />
+                        </div>
+
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
