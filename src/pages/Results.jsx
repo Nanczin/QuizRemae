@@ -2,12 +2,13 @@ import React, { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, ShieldCheck, Play, Pause, VolumeX } from 'lucide-react';
 import { bgm } from '../utils/sounds';
+import VSLVideo from '../assets/vsl-quiz.mp4';
 
 // ==========================================
 // CONFIGURAÇÕES DA VSL (YOUTUBE - API MODE)
 // ==========================================
 const VSL_CONFIG = {
-    // ID do vídeo do YouTube
+    // ID do vídeo do YouTube (Mantido para referência, mas usando Local)
     videoId: "xeTISviozS4",
     offerDelaySeconds: 0,
     primaryColor: '#FB7C80'
@@ -37,9 +38,7 @@ const VSLPlayer = ({ onProgress }) => {
         console.log("DEBUG: videoRef found, attaching listeners. Src:", video.currentSrc || video.src);
 
         const updateTime = () => {
-            if (onProgress) {
-                onProgress(video.currentTime);
-            }
+            if (onProgress) onProgress(video.currentTime);
         };
 
         const logEvent = (name) => console.log(`DEBUG: Video Event - ${name}`);
@@ -50,7 +49,6 @@ const VSLPlayer = ({ onProgress }) => {
         const onLoadedMetadata = () => {
             logEvent('loadedmetadata');
             console.log("DEBUG: Video Duration:", video.duration);
-            console.log("DEBUG: Video VideoWidth:", video.videoWidth);
         };
         const onWaiting = () => logEvent('waiting');
         const onStalled = () => logEvent('stalled');
@@ -110,7 +108,7 @@ const VSLPlayer = ({ onProgress }) => {
             {!hasError ? (
                 <video
                     ref={videoRef}
-                    src="/vsl-quiz.mp4"
+                    src={VSLVideo}
                     muted
                     autoPlay
                     playsInline
@@ -133,19 +131,24 @@ const VSLPlayer = ({ onProgress }) => {
                 </video>
             ) : (
                 <div style={{
-                    padding: '40px',
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    padding: '20px',
                     textAlign: 'center',
                     color: '#EF4444',
+                    background: '#000',
+                    zIndex: 10,
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    height: '100%',
-                    minHeight: '200px'
+                    justifyContent: 'center'
                 }}>
-                    <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Erro ao carregar o vídeo</p>
-                    <p style={{ fontSize: '0.9rem' }}>Verifique se o arquivo 'vsl-quiz.mp4' está na pasta public.</p>
-                    <p style={{ fontSize: '0.8rem', marginTop: '8px' }}>Verifique o console para mais detalhes.</p>
+                    <p style={{ fontWeight: 'bold', marginBottom: '8px', fontSize: '1.2rem' }}>Erro ao carregar o vídeo</p>
+                    <p style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>Não foi possível reproduzir o arquivo.</p>
+                    <p style={{ fontSize: '0.8rem', marginTop: '8px', opacity: 0.7 }}>Tente recarregar a página.</p>
                 </div>
             )}
 
@@ -175,11 +178,9 @@ const VSLPlayer = ({ onProgress }) => {
                         pointerEvents: 'none'
                     }}>
                         <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
-
                         <div style={{ position: 'relative' }}>
                             <Play size={48} fill="white" color="white" />
                         </div>
-
                         <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
                     </div>
                 </div>
