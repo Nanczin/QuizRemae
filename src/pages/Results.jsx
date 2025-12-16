@@ -171,34 +171,47 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%'
             }}
         >
-            {/* Wrapper to catching clicks for Play/Pause when overlay is gone */}
-            <div
-                onClick={!showOverlay ? togglePlay : undefined}
-                style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    width: '100%',
-                    height: '100%',
-                    pointerEvents: 'auto',
-                    cursor: !showOverlay ? 'pointer' : 'default'
-                }}
-            >
-                <div id="youtube-player" style={{ width: '100%', height: '100%', pointerEvents: 'none' }} />
+            {/* 1. LAYER: Video Iframe */}
+            <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}>
+                <div id="youtube-player" style={{ width: '100%', height: '100%' }} />
             </div>
 
-            {/* CUSTOM PLAY BUTTON (Only visible when overlay is gone) */}
+            {/* 2. LAYER: Interaction Shield (Transparent) 
+                Captures clicks to toggle play/pause, preventing them from being eaten by the iframe 
+            */}
+            {!showOverlay && (
+                <div
+                    onClick={togglePlay}
+                    style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 1, // Above iframe
+                        cursor: 'pointer',
+                        background: 'transparent' // Explicitly transparent
+                    }}
+                />
+            )}
+
+            {/* 3. LAYER: Custom Play/Pause Button */}
             {!showOverlay && (
                 <div style={{
                     position: 'absolute',
                     bottom: '20px',
                     left: '20px',
-                    zIndex: 10,
+                    zIndex: 10, // Above Shield
+                    pointerEvents: 'none', // Let clicks pass through to shield (or handle click on button itself)
                     transition: 'opacity 0.3s ease',
-                    opacity: showControls || !isPlaying ? 1 : 0 // Show if paused or hovering
+                    opacity: showControls || !isPlaying ? 1 : 0
                 }}>
                     <button
-                        onClick={togglePlay}
+                        onClick={(e) => {
+                            // Ensure button click also works if pointerEvents wasn't none
+                            e.stopPropagation();
+                            togglePlay();
+                        }}
                         style={{
                             background: 'rgba(0, 0, 0, 0.6)',
                             border: '1px solid rgba(255, 255, 255, 0.2)',
@@ -210,7 +223,8 @@ const VSLPlayer = ({ onProgress }) => {
                             justifyContent: 'center',
                             cursor: 'pointer',
                             color: 'white',
-                            backdropFilter: 'blur(4px)'
+                            backdropFilter: 'blur(4px)',
+                            pointerEvents: 'auto' // Re-enable pointer events for the button specifically
                         }}
                     >
                         {isPlaying ? <Pause size={24} fill="white" /> : <Play size={24} fill="white" style={{ marginLeft: '4px' }} />}
