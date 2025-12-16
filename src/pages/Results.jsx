@@ -14,197 +14,59 @@ const VSL_CONFIG = {
 };
 
 // ==========================================
-// COMPONENT: YOUTUBE PLAYER (CUSTOM OVERLAY + NO BORDERS + PAUSE Toggle)
+// COMPONENT: NATIVE VIDEO PLAYER (LOCAL FILE)
 // ==========================================
 const VSLPlayer = ({ onProgress }) => {
-    const playerRef = useRef(null);
-    const [needsInteraction, setNeedsInteraction] = useState(true);
-    const [isPlaying, setIsPlaying] = useState(true);
-    const [isPlayerReady, setIsPlayerReady] = useState(false);
+    const videoRef = useRef(null);
 
-    // Inicialização da API do YouTube
+    // Track progress for "Smart Offer Delay"
     useEffect(() => {
-        bgm.stop();
+        const video = videoRef.current;
+        if (!video) return;
 
-        if (!window.YT) {
-            const tag = document.createElement('script');
-            tag.src = "https://www.youtube.com/iframe_api";
-            const firstScriptTag = document.getElementsByTagName('script')[0];
-            firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-        }
-
-        window.onYouTubeIframeAPIReady = initializePlayer;
-
-        if (window.YT && window.YT.Player) {
-            initializePlayer();
-        }
-    }, []);
-
-    const initializePlayer = () => {
-        if (playerRef.current) return;
-
-        try {
-            playerRef.current = new window.YT.Player('youtube-player', {
-                videoId: VSL_CONFIG.videoId,
-                width: '100%',
-                height: '100%',
-                playerVars: {
-                    autoplay: 1,      // Tenta autoplay mudo (Padrão VSL)
-                    mute: 1,
-                    controls: 0,      // Sem controles nativos
-                    rel: 0,
-                    modestbranding: 1,
-                    playsinline: 1,
-                    fs: 0,
-                    disablekb: 1,
-                    enablejsapi: 1,
-                    origin: window.location.origin,
-                    widget_referrer: window.location.href
-                },
-                events: {
-                    'onReady': onPlayerReady,
-                    'onStateChange': onPlayerStateChange
-                }
-            });
-        } catch (e) {
-            console.error("YouTube API Init Error", e);
-        }
-    };
-
-    const onPlayerReady = (event) => {
-        const iframe = event.target.getIframe();
-        if (iframe) {
-            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; accelerometer; gyroscope; picture-in-picture');
-        }
-        event.target.mute();
-        event.target.playVideo();
-        setIsPlayerReady(true);
-    };
-
-    const onPlayerStateChange = (event) => {
-        if (event.data === window.YT.PlayerState.PLAYING) {
-            setIsPlaying(true);
-        } else if (event.data === window.YT.PlayerState.PAUSED) {
-            setIsPlaying(false);
-        }
-    };
-
-    const handleUnlockAudio = (e) => {
-        if (e) {
-            e.stopPropagation();
-        }
-
-        if (playerRef.current) {
-            // Sequência Síncrona para manter o "User Gesture"
-            playerRef.current.unMute();
-            playerRef.current.setVolume(100);
-            playerRef.current.seekTo(0);
-            playerRef.current.playVideo();
-            setNeedsInteraction(false);
-        }
-    };
-
-    const togglePlay = (e) => {
-        if (e) {
-            e.stopPropagation();
-            if (e.cancelable) e.preventDefault();
-        }
-
-        if (!playerRef.current) return;
-
-        if (isPlaying) {
-            playerRef.current.pauseVideo();
-        } else {
-            playerRef.current.playVideo();
-        }
-    };
-
-    // Loop de Progresso
-    useEffect(() => {
-        const interval = setInterval(() => {
-            if (playerRef.current && playerRef.current.getCurrentTime) {
-                const time = playerRef.current.getCurrentTime();
-                if (onProgress) onProgress(time);
+        const updateTime = () => {
+            if (onProgress) {
+                onProgress(video.currentTime);
             }
-        }, 1000);
-        return () => clearInterval(interval);
+        };
+
+        video.addEventListener('timeupdate', updateTime);
+        return () => {
+            video.removeEventListener('timeupdate', updateTime);
+        };
     }, [onProgress]);
+
+    useEffect(() => {
+        // Stop background music when VSL component mounts
+        bgm.stop();
+    }, []);
 
     return (
         <div
             className="vsl-container"
             style={{
-                position: 'relative',
-                paddingBottom: '56.25%',
-                background: '#000',
                 borderRadius: '16px',
                 overflow: 'hidden',
-                boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
+                boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
+                background: '#000',
+                width: '100%',
+                lineHeight: 0 // Prevents bottom gap
             }}
         >
-            {/* WRAPPER */}
-            <div
-                id="youtube-player"
+            <video
+                ref={videoRef}
+                src="/vsl-quiz.mp4"
+                controls
+                playsInline
+                controlsList="nodownload"
                 style={{
-                    position: 'absolute',
-                    top: '50%',
-                    left: '50%',
-                    transform: 'translate(-50%, -50%) scale(1.1)',
                     width: '100%',
-                    height: '100%',
-                    transformOrigin: 'center center',
-                    pointerEvents: 'none' // Clicks managed by overlay
+                    height: 'auto',
+                    display: 'block'
                 }}
-            />
-
-            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) */}
-            {needsInteraction && isPlayerReady && (
-                <div
-                    onClick={handleUnlockAudio}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 20,
-                        background: 'transparent',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        cursor: 'pointer',
-                        touchAction: 'manipulation'
-                    }}
-                >
-                    <div className="pulse-animation" style={{
-                        background: '#EF4444',
-                        color: 'white',
-                        padding: '20px 32px',
-                        borderRadius: '12px',
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
-                        border: '2px solid white',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                        textAlign: 'center',
-                        minWidth: '220px',
-                        pointerEvents: 'none'
-                    }}>
-                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
-
-                        <div style={{ position: 'relative' }}>
-                            <Play size={48} fill="white" color="white" />
-                        </div>
-
-                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
-                    </div>
-                </div>
-            )}
-
-            {/* 2. CONTROLADOR DE PLAY/PAUSE (SEM ÍCONES EXTRAS) */}
-            {!needsInteraction && (
-                <div
-                    onClick={togglePlay}
-                    style={{
-                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                        zIndex: 10,
-                        cursor: 'pointer',
-                        touchAction: 'manipulation'
-                    }}
-                />
-            )}
+            >
+                Seu navegador não suporta a tag de vídeo.
+            </video>
         </div>
     );
 };
