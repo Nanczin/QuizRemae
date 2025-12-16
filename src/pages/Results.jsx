@@ -77,27 +77,25 @@ const VSLPlayer = ({ onProgress }) => {
         // Se o vídeo terminar, talvez mostrar algo, mas por enquanto nada essencial
     };
 
-    const handleUnlockAudio = () => {
-        // NÃO usar preventDefault() aqui para garantir que o navegador 
-        // reconheça o "user gesture" para liberar o áudio.
+    const handleUnlockAudio = (e) => {
+        // Mantemos preventDefault opcionalmente, mas o foco é a execução SÍNCRONA
+        if (e && e.preventDefault) e.preventDefault();
 
         if (playerRef.current && playerRef.current.playVideo) {
-            // Sequência otimizada para garantir o play
             try {
+                // Sequência Síncrona, direta e sem timeouts
+                // A chave para mobile é executar playVideo() na mesma call stack do evento de clique.
                 playerRef.current.unMute();
                 playerRef.current.setVolume(100);
 
-                // Seek e Play. Seek as vezes pausa o video, então chamamos play logo depois.
-                playerRef.current.seekTo(0);
+                // Seek para o início (com allowSeekAhead=true)
+                playerRef.current.seekTo(0, true);
 
-                // Timeout minúsculo para garantir que o comando play seja o último processado na pilha de eventos do JS
-                // Isso ajuda em alguns conflitos de estado do player
-                setTimeout(() => {
-                    playerRef.current.playVideo();
-                }, 100);
+                // Play IMEDIATO
+                playerRef.current.playVideo();
 
             } catch (error) {
-                console.error("Erro no player:", error);
+                console.error("Erro ao manipular player:", error);
             }
 
             setShowOverlay(false);
