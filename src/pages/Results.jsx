@@ -96,10 +96,16 @@ const VSLPlayer = ({ onProgress }) => {
         if (playerRef.current && playerRef.current.unMute) {
             playerRef.current.unMute();
             playerRef.current.setVolume(100);
-            playerRef.current.seekTo(0);
+            // Removed seekTo(0) as it can cause freezing in some mobile webviews
             playerRef.current.playVideo();
             setNeedsInteraction(false);
-            setIsPlaying(true); // Força estado visual
+
+            // Safety check: force play again after a small delay to ensure it activates on mobile
+            setTimeout(() => {
+                if (playerRef.current && playerRef.current.playVideo) {
+                    playerRef.current.playVideo();
+                }
+            }, 300);
         }
     };
 
