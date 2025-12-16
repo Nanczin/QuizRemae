@@ -144,54 +144,56 @@ const VSLPlayer = ({ onProgress }) => {
                 }}
             />
 
-            {/* CONTROLADOR MESTRE INVISÍVEL - Cobre todo o vídeo */}
-            <div
-                onClick={hasStarted ? togglePlay : handleInitialPlay}
-                // Adiciona suporte a touch para mobile (Instagram)
-                onTouchEnd={hasStarted ? togglePlay : handleInitialPlay}
-                style={{
-                    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                    zIndex: 10,
-                    cursor: 'pointer',
-                    touchAction: 'manipulation'
-                }}
-            />
-
-            {/* BOTÃO PLAY INICIAL OU RE-PLAY (Se pausado) */}
-            {!isPlaying && (
-                <div style={{
-                    position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-                    zIndex: 20, pointerEvents: 'none' // O click é pego pelo div pai acima
-                }}>
+            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) */}
+            {needsInteraction && isPlayerReady && (
+                <div
+                    onClick={handleUnlockAudio}
+                    onTouchEnd={handleUnlockAudio}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 20,
+                        background: 'transparent',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        cursor: 'pointer',
+                        touchAction: 'manipulation'
+                    }}
+                >
                     <div className="pulse-animation" style={{
-                        background: 'rgba(239, 68, 68, 0.9)',
-                        borderRadius: '50%',
-                        padding: '24px',
-                        backdropFilter: 'blur(4px)',
-                        border: '4px solid rgba(255,255,255,0.8)',
+                        background: '#EF4444',
+                        color: 'white',
+                        padding: '20px 32px',
+                        borderRadius: '12px',
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px',
+                        border: '2px solid white',
                         boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                        textAlign: 'center',
+                        minWidth: '220px',
+                        pointerEvents: 'none'
                     }}>
-                        <Play size={48} fill="white" color="white" style={{ marginLeft: '4px' }} />
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Seu vídeo já começou</span>
+
+                        <div style={{ position: 'relative' }}>
+                            <Play size={48} fill="white" color="white" />
+                        </div>
+
+                        <span style={{ fontSize: '1.1rem', fontWeight: '700' }}>Clique para ouvir</span>
                     </div>
                 </div>
             )}
 
-            {/* BOTÃO PAUSE DISCRETO (Apenas quando tocando, para feedback visual) */}
-            {isPlaying && (
-                <div style={{
-                    position: 'absolute', bottom: '20px', left: '20px',
-                    zIndex: 15, pointerEvents: 'none', opacity: 0.6
-                }}>
-                    <div style={{
-                        background: 'rgba(0,0,0,0.6)', borderRadius: '50%', padding: '12px',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                        <Pause size={24} fill="white" color="white" />
-                    </div>
-                </div>
+            {/* 2. CONTROLADOR DE PLAY/PAUSE (SEM ÍCONES EXTRAS) */}
+            {!needsInteraction && (
+                <div
+                    onClick={togglePlay}
+                    onTouchEnd={togglePlay}
+                    style={{
+                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                        zIndex: 10,
+                        cursor: 'pointer',
+                        touchAction: 'manipulation'
+                    }}
+                />
             )}
-
         </div>
     );
 };
