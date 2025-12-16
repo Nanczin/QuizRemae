@@ -21,10 +21,20 @@ const VSLPlayer = ({ onProgress }) => {
     const [needsInteraction, setNeedsInteraction] = useState(true);
     const [hasError, setHasError] = useState(false);
 
-    // Track progress for "Smart Offer Delay"
+    useEffect(() => {
+        console.log("DEBUG: VSLPlayer Mounted");
+        return () => console.log("DEBUG: VSLPlayer Unmounted");
+    }, []);
+
+    // Track progress & Debug Events
     useEffect(() => {
         const video = videoRef.current;
-        if (!video) return;
+        if (!video) {
+            console.log("DEBUG: videoRef is null");
+            return;
+        }
+
+        console.log("DEBUG: videoRef found, attaching listeners. Src:", video.currentSrc || video.src);
 
         const updateTime = () => {
             if (onProgress) {
@@ -32,24 +42,54 @@ const VSLPlayer = ({ onProgress }) => {
             }
         };
 
+        const logEvent = (name) => console.log(`DEBUG: Video Event - ${name}`);
+
+        const onPlay = () => logEvent('play');
+        const onPause = () => logEvent('pause');
+        const onCanPlay = () => logEvent('canplay');
+        const onLoadedMetadata = () => {
+            logEvent('loadedmetadata');
+            console.log("DEBUG: Video Duration:", video.duration);
+            console.log("DEBUG: Video VideoWidth:", video.videoWidth);
+        };
+        const onWaiting = () => logEvent('waiting');
+        const onStalled = () => logEvent('stalled');
+
         video.addEventListener('timeupdate', updateTime);
+        video.addEventListener('play', onPlay);
+        video.addEventListener('pause', onPause);
+        video.addEventListener('canplay', onCanPlay);
+        video.addEventListener('loadedmetadata', onLoadedMetadata);
+        video.addEventListener('waiting', onWaiting);
+        video.addEventListener('stalled', onStalled);
+
         return () => {
             video.removeEventListener('timeupdate', updateTime);
+            video.removeEventListener('play', onPlay);
+            video.removeEventListener('pause', onPause);
+            video.removeEventListener('canplay', onCanPlay);
+            video.removeEventListener('loadedmetadata', onLoadedMetadata);
+            video.removeEventListener('waiting', onWaiting);
+            video.removeEventListener('stalled', onStalled);
         };
     }, [onProgress]);
 
     useEffect(() => {
-        // Stop background music when VSL component mounts
         bgm.stop();
+        console.log("DEBUG: bgm.stop() called");
     }, []);
 
     const handleUnlockAudio = (e) => {
+        console.log("DEBUG: handleUnlockAudio clicked");
         if (e) e.stopPropagation();
         if (videoRef.current) {
+            console.log("DEBUG: Unmuting and restarting video...");
             videoRef.current.currentTime = 0;
             videoRef.current.muted = false;
             videoRef.current.volume = 1.0;
-            videoRef.current.play();
+            videoRef.current.play()
+                .then(() => console.log("DEBUG: Play promise fulfilled"))
+                .catch(err => console.error("DEBUG: Play promise failed", err));
             setNeedsInteraction(false);
         }
     };
@@ -64,7 +104,7 @@ const VSLPlayer = ({ onProgress }) => {
                 boxShadow: '0 20px 50px rgba(0,0,0,0.3)',
                 background: '#000',
                 width: '100%',
-                lineHeight: 0 // Prevents bottom gap
+                lineHeight: 0
             }}
         >
             {!hasError ? (
@@ -77,15 +117,16 @@ const VSLPlayer = ({ onProgress }) => {
                     loop
                     controls={!needsInteraction}
                     controlsList="nodownload"
+                    onLoadStart={() => console.log("DEBUG: Video onLoadStart")}
                     onError={(e) => {
-                        console.error("Erro ao carregar vídeo:", e);
+                        console.error("DEBUG: Video onError", e.nativeEvent);
                         setHasError(true);
                     }}
                     style={{
                         width: '100%',
                         height: 'auto',
                         display: 'block',
-                        transform: 'scale(1.1)' /* Scale increased */
+                        transform: 'scale(1.1)'
                     }}
                 >
                     Seu navegador não suporta a tag de vídeo.
@@ -104,17 +145,18 @@ const VSLPlayer = ({ onProgress }) => {
                 }}>
                     <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Erro ao carregar o vídeo</p>
                     <p style={{ fontSize: '0.9rem' }}>Verifique se o arquivo 'vsl-quiz.mp4' está na pasta public.</p>
+                    <p style={{ fontSize: '0.8rem', marginTop: '8px' }}>Verifique o console para mais detalhes.</p>
                 </div>
             )}
 
-            {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) */}
+            {/* 1. OVERLAY DE BLOQUEIO */}
             {needsInteraction && !hasError && (
                 <div
                     onClick={handleUnlockAudio}
                     style={{
                         position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
                         zIndex: 20,
-                        background: 'rgba(0,0,0,0.1)', // Leve overlay escuro
+                        background: 'rgba(0,0,0,0.1)',
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                         cursor: 'pointer',
                         touchAction: 'manipulation'
