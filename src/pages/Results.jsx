@@ -194,7 +194,7 @@ const VSLPlayer = ({ onProgress }) => {
 
 
 const Results = () => {
-    const [showOffer, setShowOffer] = useState(false);
+    const [showOffer, setShowOffer] = useState(VSL_CONFIG.offerDelaySeconds === 0);
 
     const navigate = useNavigate();
 
@@ -234,7 +234,7 @@ const Results = () => {
             paddingBottom: 'calc(40px + env(safe-area-inset-bottom))',
             background: 'linear-gradient(180deg, #FFF 0%, #FFF5F5 100%)'
         }}>
-            <div style={{ maxWidth: '800px', margin: '0 auto', width: '100%' }}>
+            <div style={{ maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
 
                 {/* --- HEADLINE --- */}
                 <h1 className="text-center" style={{
