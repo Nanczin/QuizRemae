@@ -70,7 +70,6 @@ const VSLPlayer = ({ onProgress }) => {
                 ref={videoRef}
                 src="/vsl-quiz.mp4"
                 muted
-                autoPlay
                 playsInline
                 loop
                 controls={!needsInteraction}
@@ -78,7 +77,8 @@ const VSLPlayer = ({ onProgress }) => {
                 style={{
                     width: '100%',
                     height: 'auto',
-                    display: 'block'
+                    display: 'block',
+                    transform: 'scale(1.01)' /* Small scale to ensure no black lines */
                 }}
             >
                 Seu navegador não suporta a tag de vídeo.
