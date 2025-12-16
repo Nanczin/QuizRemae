@@ -19,6 +19,7 @@ const VSL_CONFIG = {
 const VSLPlayer = ({ onProgress }) => {
     const videoRef = useRef(null);
     const [needsInteraction, setNeedsInteraction] = useState(true);
+    const [hasError, setHasError] = useState(false);
 
     // Track progress for "Smart Offer Delay"
     useEffect(() => {
@@ -66,26 +67,48 @@ const VSLPlayer = ({ onProgress }) => {
                 lineHeight: 0 // Prevents bottom gap
             }}
         >
-            <video
-                ref={videoRef}
-                src="/vsl-quiz.mp4"
-                muted
-                playsInline
-                loop
-                controls={!needsInteraction}
-                controlsList="nodownload"
-                style={{
-                    width: '100%',
-                    height: 'auto',
-                    display: 'block',
-                    transform: 'scale(1.01)' /* Small scale to ensure no black lines */
-                }}
-            >
-                Seu navegador não suporta a tag de vídeo.
-            </video>
+            {!hasError ? (
+                <video
+                    ref={videoRef}
+                    src="/vsl-quiz.mp4"
+                    muted
+                    autoPlay
+                    playsInline
+                    loop
+                    controls={!needsInteraction}
+                    controlsList="nodownload"
+                    onError={(e) => {
+                        console.error("Erro ao carregar vídeo:", e);
+                        setHasError(true);
+                    }}
+                    style={{
+                        width: '100%',
+                        height: 'auto',
+                        display: 'block',
+                        transform: 'scale(1.1)' /* Scale increased */
+                    }}
+                >
+                    Seu navegador não suporta a tag de vídeo.
+                </video>
+            ) : (
+                <div style={{
+                    padding: '40px',
+                    textAlign: 'center',
+                    color: '#EF4444',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    height: '100%',
+                    minHeight: '200px'
+                }}>
+                    <p style={{ fontWeight: 'bold', marginBottom: '8px' }}>Erro ao carregar o vídeo</p>
+                    <p style={{ fontSize: '0.9rem' }}>Verifique se o arquivo 'vsl-quiz.mp4' está na pasta public.</p>
+                </div>
+            )}
 
             {/* 1. OVERLAY DE BLOQUEIO (TOQUE PARA OUVIR) */}
-            {needsInteraction && (
+            {needsInteraction && !hasError && (
                 <div
                     onClick={handleUnlockAudio}
                     style={{
