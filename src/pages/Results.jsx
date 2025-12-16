@@ -18,8 +18,9 @@ const VSL_CONFIG = {
 // ==========================================
 const VSLPlayer = ({ onProgress }) => {
     const playerRef = useRef(null);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [hasStarted, setHasStarted] = useState(false);
+    const [needsInteraction, setNeedsInteraction] = useState(true);
+    const [isPlaying, setIsPlaying] = useState(true);
+    const [isPlayerReady, setIsPlayerReady] = useState(false);
 
     // Inicialização da API do YouTube
     useEffect(() => {
@@ -48,17 +49,20 @@ const VSLPlayer = ({ onProgress }) => {
                 width: '100%',
                 height: '100%',
                 playerVars: {
-                    autoplay: 0,      // Começa PAUSADO para compatibilidade total
-                    controls: 0,      // SEM BARRA DE PROGRESSO (Pedido do usuário)
+                    autoplay: 1,      // Tenta autoplay mudo (Padrão VSL)
+                    mute: 1,
+                    controls: 0,      // Sem controles nativos
                     rel: 0,
                     modestbranding: 1,
                     playsinline: 1,
                     fs: 0,
                     disablekb: 1,
                     enablejsapi: 1,
-                    origin: window.location.origin
+                    origin: window.location.origin,
+                    widget_referrer: window.location.href
                 },
                 events: {
+                    'onReady': onPlayerReady,
                     'onStateChange': onPlayerStateChange
                 }
             });
@@ -67,28 +71,37 @@ const VSLPlayer = ({ onProgress }) => {
         }
     };
 
+    const onPlayerReady = (event) => {
+        const iframe = event.target.getIframe();
+        if (iframe) {
+            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen; accelerometer; gyroscope; picture-in-picture');
+        }
+        event.target.mute();
+        event.target.playVideo();
+        setIsPlayerReady(true);
+    };
+
     const onPlayerStateChange = (event) => {
         if (event.data === window.YT.PlayerState.PLAYING) {
             setIsPlaying(true);
-            setHasStarted(true);
-        } else if (event.data === window.YT.PlayerState.PAUSED || event.data === window.YT.PlayerState.ENDED) {
+        } else if (event.data === window.YT.PlayerState.PAUSED) {
             setIsPlaying(false);
         }
     };
 
-    const handleInitialPlay = (e) => {
+    const handleUnlockAudio = (e) => {
         if (e) {
             e.stopPropagation();
             if (e.cancelable) e.preventDefault();
         }
 
-        if (playerRef.current && playerRef.current.playVideo) {
-            // Garante som ligado e play
+        if (playerRef.current) {
+            // Sequência de desbloqueio para VSL
             playerRef.current.unMute();
             playerRef.current.setVolume(100);
+            playerRef.current.seekTo(0); // Reinicia ao liberar áudio
             playerRef.current.playVideo();
-            setHasStarted(true);
-            setIsPlaying(true);
+            setNeedsInteraction(false);
         }
     };
 
@@ -130,6 +143,7 @@ const VSLPlayer = ({ onProgress }) => {
                 boxShadow: '0 20px 50px rgba(0,0,0,0.3)'
             }}
         >
+            {/* WRAPPER */}
             <div
                 id="youtube-player"
                 style={{
@@ -140,7 +154,7 @@ const VSLPlayer = ({ onProgress }) => {
                     width: '100%',
                     height: '100%',
                     transformOrigin: 'center center',
-                    pointerEvents: 'none' // Importante: Clicks passam para nosso overlay controller
+                    pointerEvents: 'none' // Clicks managed by overlay
                 }}
             />
 
