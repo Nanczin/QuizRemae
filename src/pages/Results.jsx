@@ -87,27 +87,33 @@ const VSLPlayer = ({ onProgress }) => {
     };
 
     const handleUnlockAudio = (e) => {
-        if (e && e.preventDefault) e.preventDefault();
+        if (e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
 
         if (playerRef.current && playerRef.current.playVideo) {
             try {
-                // Força desbloqueio
+                // Força desbloqueio imediato
                 playerRef.current.unMute();
                 playerRef.current.setVolume(100);
 
-                // Em mobile, às vezes o seek causa pause. Vamos garantir o play primeiro.
+                // Reinicia o vídeo do zero (sem setTimeout para evitar bloqueio de mobile)
+                playerRef.current.seekTo(0, true);
+                
+                // Força o play
                 playerRef.current.playVideo();
 
-                // Se o vídeo já estiver rodando (background), o seek(0) é útil.
-                // Mas se não estiver, o playVideo é a prioridade.
-                // Vamos tentar resetar APÓS garantir o play.
-                setTimeout(() => {
-                    playerRef.current.seekTo(0, true);
-                    playerRef.current.playVideo(); // Reforça play pós-seek
-                }, 50);
+                // Feedback visual imediato para o usuário
+                setShowOverlay(false);
+                bgm.stop();
 
             } catch (error) {
                 console.error("Erro ao manipular player:", error);
+                // Fallback: garante que o overlay suma mesmo se der erro no play, 
+                // para permitir que o usuário tente interagir com o player nativo se necessário
+                setShowOverlay(false); 
+                bgm.stop();
             }
         }
     };
