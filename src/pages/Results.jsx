@@ -14,6 +14,12 @@ const VSL_CONFIG = {
 };
 
 // ==========================================
+// CONFIGURAÇÕES DO FACEBOOK (PIXEL + CAPI)
+// ==========================================
+const FB_ACCESS_TOKEN = 'EAAT3PSDAaVQBQZAcTIgxfAGeZCnkfgbYU39QcI1vyOdFoSF42ChwWQhUYZACZBLx0A2seS8FRZCIPb42OwZCrU0rTaqpvwDtYJKoVI0u4MJPbepvTWzpgZAowI0nDL4yfx1ZCI5ZAcZCzYxRPSSqHsNRX6umE2kmIQ5JI7a7JFRLI0AvClGVQeZCvM50ADltdOijhZB9GgZDZD';
+const FB_PIXEL_ID = '1052534986794583';
+
+// ==========================================
 // COMPONENT: YOUTUBE VIDEO PLAYER (NATIVE API)
 // ==========================================
 const VSLPlayer = ({ onProgress }) => {
@@ -321,8 +327,55 @@ const Results = () => {
         }
     };
 
+    const sendCAPIEvent = (eventName, eventData) => {
+        const eventId = 'evt-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+        // 1. Browser Pixel Track (Standard)
+        if (window.fbq) {
+            window.fbq('track', eventName, eventData, { eventID: eventId });
+        }
+
+        // 2. Conversion API Track (Direct Call)
+        const payload = {
+            data: [
+                {
+                    event_name: eventName,
+                    event_time: Math.floor(Date.now() / 1000),
+                    event_id: eventId,
+                    event_source_url: window.location.href,
+                    action_source: "website",
+                    user_data: {
+                        client_user_agent: navigator.userAgent
+                        // Note: IP address is handled by Facebook automatically on request reception
+                    },
+                    custom_data: eventData
+                }
+            ]
+        };
+
+        // Fire and forget using keepalive to persist after redirect
+        fetch(`https://graph.facebook.com/v16.0/${FB_PIXEL_ID}/events?access_token=${FB_ACCESS_TOKEN}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload),
+            keepalive: true
+        }).catch(e => console.error("CAPI Error:", e));
+    };
+
     const handleCheckout = (plan) => {
-        window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
+        // Envia eventos antes do redirect
+        sendCAPIEvent('InitiateCheckout', {
+            content_category: 'Curso',
+            content_name: plan === 'complete' ? 'Pacote Completo (R$ 27)' : 'Pacote Essencial (R$ 10)',
+            value: plan === 'complete' ? 27.00 : 10.00,
+            currency: 'BRL',
+            num_items: 1
+        });
+
+        // Pequeno delay para garantir o disparo da requisição
+        setTimeout(() => {
+            window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
+        }, 150);
     };
 
     const scrollToPackages = (e) => {
