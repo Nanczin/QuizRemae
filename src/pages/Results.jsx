@@ -375,7 +375,7 @@ const Results = () => {
         // Pequeno delay para garantir o disparo da requisição
         setTimeout(() => {
             window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
-        }, 150);
+        }, 500);
     };
 
     const scrollToPackages = (e) => {
