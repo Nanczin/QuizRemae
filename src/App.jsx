@@ -7,11 +7,13 @@ import DiagnosisLoading from './pages/DiagnosisLoading';
 import Results from './pages/Results';
 import VSL from './pages/VSL';
 import Checkout from './pages/Checkout';
+import PixelTracker from './components/PixelTracker';
 import AudioController from './components/AudioController';
 
 function App() {
   return (
     <Router>
+      <PixelTracker />
       <AudioController />
       <Routes>
         <Route path="/" element={<Home />} />
