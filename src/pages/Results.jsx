@@ -332,6 +332,7 @@ const Results = () => {
 
         // 1. Browser Pixel Track (Standard)
         if (window.fbq) {
+            console.log('Firing Pixel:', eventName);
             window.fbq('track', eventName, eventData, { eventID: eventId });
         }
 
@@ -354,28 +355,37 @@ const Results = () => {
         };
 
         // Fire and forget using keepalive to persist after redirect
-        fetch(`https://graph.facebook.com/v16.0/${FB_PIXEL_ID}/events?access_token=${FB_ACCESS_TOKEN}`, {
+        // Returns the promise so we can wait for it if needed
+        return fetch(`https://graph.facebook.com/v16.0/${FB_PIXEL_ID}/events?access_token=${FB_ACCESS_TOKEN}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload),
             keepalive: true
+        }).then(response => {
+            console.log('CAPI Response:', response);
+            return response.json();
+        }).then(data => {
+            console.log('CAPI Data:', data);
         }).catch(e => console.error("CAPI Error:", e));
     };
 
     const handleCheckout = (plan) => {
         // Envia eventos antes do redirect
-        sendCAPIEvent('InitiateCheckout', {
+        const trackingPromise = sendCAPIEvent('InitiateCheckout', {
             content_category: 'Curso',
             content_name: plan === 'complete' ? 'Pacote Completo (R$ 27)' : 'Pacote Essencial (R$ 10)',
             value: plan === 'complete' ? 27.00 : 10.00,
             currency: 'BRL',
             num_items: 1
-        });
+        }) || Promise.resolve(); // Fallback if sendCAPIEvent returns undefined
 
-        // Pequeno delay para garantir o disparo da requisição
-        setTimeout(() => {
+        // Redirecionamento seguro:
+        // Espera o tracking terminar OU 1.5 segundos (o que vier primeiro)
+        const timeoutPromise = new Promise(resolve => setTimeout(resolve, 1500));
+
+        Promise.race([trackingPromise, timeoutPromise]).finally(() => {
             window.location.href = 'https://www.elyondigital.com.br/checkout/73b4a49b-a89e-45e6-9f46-65be9fee24dd';
-        }, 500);
+        });
     };
 
     const scrollToPackages = (e) => {
