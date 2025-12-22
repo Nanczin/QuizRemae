@@ -305,12 +305,32 @@ const VSLPlayer = ({ onProgress }) => {
 
 const Results = () => {
     const [showOffer, setShowOffer] = useState(VSL_CONFIG.offerDelaySeconds === 0);
+    const [showExitModal, setShowExitModal] = useState(false);
 
     const navigate = useNavigate();
 
     // Scroll to Top on Mount (Ensures Headline is visible)
     useEffect(() => {
         window.scrollTo(0, 0);
+    }, []);
+
+    // Back Redirect / Exit Intent Logic
+    useEffect(() => {
+        // Push a new entry to history to allow intercepting the back button
+        window.history.pushState(null, "", window.location.href);
+
+        const handlePopState = () => {
+            // Prevent the user from leaving effectively by pushing state again
+            window.history.pushState(null, "", window.location.href);
+            // Show the retention modal
+            setShowExitModal(true);
+        };
+
+        window.addEventListener('popstate', handlePopState);
+
+        return () => {
+            window.removeEventListener('popstate', handlePopState);
+        };
     }, []);
 
     // Show offer immediately if delay is 0
@@ -850,6 +870,75 @@ const Results = () => {
                     </div>
                 </div>
 
+                {/* Exit Intent Modal */}
+                {showExitModal && (
+                    <div style={{
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        background: 'rgba(0,0,0,0.8)',
+                        zIndex: 9999, // Highest z-index
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '20px',
+                        backdropFilter: 'blur(5px)'
+                    }}>
+                        <div className="animate-pop-in" style={{
+                            background: 'white',
+                            padding: '32px 24px',
+                            borderRadius: '20px',
+                            maxWidth: '400px',
+                            width: '100%',
+                            textAlign: 'center',
+                            boxShadow: '0 20px 50px rgba(0,0,0,0.5)',
+                            position: 'relative',
+                            border: '4px solid #EF4444'
+                        }}>
+                            <div style={{ fontSize: '3.5rem', marginBottom: '8px' }}>✋</div>
+                            <h3 style={{ fontSize: '1.8rem', color: '#EF4444', fontWeight: '900', marginBottom: '16px', lineHeight: '1.1', textTransform: 'uppercase' }}>
+                                ESPERE! NÃO VÁ EMBORA ASSIM…
+                            </h3>
+                            <p style={{ fontSize: '1.1rem', color: '#374151', lineHeight: '1.5', marginBottom: '24px' }}>
+                                Eu entendo que você possa estar em dúvida, mas pense: <strong>Daqui a 30 dias, você vai desejar ter começado hoje.</strong>
+                            </p>
+                            <p style={{ fontSize: '1.1rem', color: '#374151', lineHeight: '1.5', marginBottom: '24px' }}>
+                                Liberamos o <strong>ACESSO VITALÍCIO</strong> ao Pacote Essencial por apenas <strong>R$ 10,00</strong>. É menos que um lanche.
+                            </p>
+
+                            <button
+                                onClick={() => handleCheckout('essential')}
+                                className="btn pulse-animation"
+                                style={{
+                                    width: '100%',
+                                    background: '#10B981',
+                                    padding: '16px',
+                                    fontSize: '1.2rem',
+                                    boxShadow: '0 8px 20px rgba(16, 185, 129, 0.4)',
+                                    fontWeight: 'bold'
+                                }}
+                            >
+                                SIM! QUERO APROVEITAR POR R$ 10
+                            </button>
+
+                            <button
+                                onClick={() => setShowExitModal(false)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#9CA3AF',
+                                    marginTop: '20px',
+                                    fontSize: '0.9rem',
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline'
+                                }}>
+                                Não, prefiro continuar insatisfeita com meu corpo
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div >
     );
